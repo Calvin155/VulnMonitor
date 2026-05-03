@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-base:       #070b12;
+  --bg-surface:    #0c1120;
+  --bg-card:       #111927;
+  --bg-card-hover: #16202e;
+  --bg-elevated:   #1c2840;
+
+  --border-subtle:  rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.09);
+  --border-accent:  rgba(0, 212, 255, 0.28);
+
+  --text-primary:   #e2e8f0;
+  --text-secondary: #8892a4;
+  --text-muted:     #4a5568;
+
+  --critical:        #ff4757;
+  --critical-bg:     rgba(255, 71, 87, 0.1);
+  --critical-border: rgba(255, 71, 87, 0.3);
+
+  --high:        #ff7c43;
+  --high-bg:     rgba(255, 124, 67, 0.1);
+  --high-border: rgba(255, 124, 67, 0.3);
+
+  --medium:        #ffd166;
+  --medium-bg:     rgba(255, 209, 102, 0.1);
+  --medium-border: rgba(255, 209, 102, 0.3);
+
+  --low:        #06d6a0;
+  --low-bg:     rgba(6, 214, 160, 0.1);
+  --low-border: rgba(6, 214, 160, 0.3);
+
+  --info:        #4cc9f0;
+  --info-bg:     rgba(76, 201, 240, 0.1);
+  --info-border: rgba(76, 201, 240, 0.3);
+
+  --accent:        #00d4ff;
+  --accent-bg:     rgba(0, 212, 255, 0.08);
+  --accent-hover:  rgba(0, 212, 255, 0.14);
+  --accent-purple: #a855f7;
+  --accent-green:  #06d6a0;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+/* ── Shared Badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge-critical { color: var(--critical); background: var(--critical-bg); border: 1px solid var(--critical-border); }
+.badge-high     { color: var(--high);     background: var(--high-bg);     border: 1px solid var(--high-border); }
+.badge-medium   { color: var(--medium);   background: var(--medium-bg);   border: 1px solid var(--medium-border); }
+.badge-low      { color: var(--low);      background: var(--low-bg);      border: 1px solid var(--low-border); }
+.badge-info     { color: var(--info);     background: var(--info-bg);     border: 1px solid var(--info-border); }
+
+.badge-new       { color: var(--accent);        background: var(--accent-bg);         border: 1px solid rgba(0,212,255,0.25); }
+.badge-reviewing { color: var(--accent-purple); background: rgba(168,85,247,0.1);     border: 1px solid rgba(168,85,247,0.25); }
+.badge-fixed     { color: var(--accent-green);  background: rgba(6,214,160,0.1);      border: 1px solid rgba(6,214,160,0.25); }
+.badge-fp        { color: var(--text-muted);    background: rgba(255,255,255,0.04);   border: 1px solid rgba(255,255,255,0.1); }
+
+/* ── Shared Card ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.card-title {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
