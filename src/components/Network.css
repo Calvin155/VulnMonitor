@@ -210,3 +210,77 @@
 }
 
 .text-muted { color: var(--text-muted); }
+
+/* ─────────────────────────────────────────────
+   MOBILE OVERRIDES
+───────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+
+  .network-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .network-table-wrap {
+    margin: 0 -12px;
+  }
+
+  .network-table th,
+  .network-table td {
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .network-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .network-controls {
+    gap: 10px;
+  }
+
+  .network-filter {
+    width: 100%;
+  }
+
+  .network-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .network-table {
+    min-width: 700px; /* prevents collapse, allows horizontal scroll */
+  }
+
+  .network-ip,
+  .network-hostname,
+  .network-mono {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .network-desc {
+    font-size: 12px;
+  }
+
+  .network-error,
+  .network-hint {
+    font-size: 11px;
+  }
+
+  .network-table {
+    min-width: 640px;
+  }
+
+  .network-action-link {
+    font-size: 10.5px;
+    padding: 3px 7px;
+  }
+}
