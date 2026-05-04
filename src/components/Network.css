@@ -1,3 +1,7 @@
+/* ─────────────────────────────────────────────
+   NETWORK
+───────────────────────────────────────────── */
+
 .network {
   display: flex;
   flex-direction: column;
@@ -71,7 +75,9 @@
   padding: 10px 12px;
   line-height: 1.6;
 }
+
 .network-hint strong { color: var(--medium); }
+
 .network-hint code {
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -96,21 +102,38 @@
   font-weight: 500;
 }
 
+/* ─────────────────────────────────────────────
+   FIXED INPUT (network filter)
+───────────────────────────────────────────── */
+
 .network-filter {
-  background: var(--bg-base);
-  border: 1px solid var(--border-default);
+  all: unset;
+
+  width: 100%;
+  box-sizing: border-box;
+
+  background-color: #2f2f3a;
+  color: #a855f7;
+
+  border: 1px solid #444;
   border-radius: var(--radius-md);
-  color: var(--text-primary);
+
   font-family: var(--font-sans);
   font-size: 12px;
   padding: 6px 10px;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+
+  caret-color: #a855f7;
+  transition: all 0.15s ease;
 }
-.network-filter::placeholder { color: var(--text-muted); }
+
+.network-filter::placeholder {
+  color: var(--text-muted);
+}
+
 .network-filter:focus {
   border-color: var(--border-accent);
   box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.08);
+  background-color: #3a3a4a;
 }
 
 .network-empty {
@@ -189,6 +212,7 @@
   transition: color 0.15s;
   line-height: 1;
 }
+
 .network-copy:hover { color: var(--accent); }
 
 .network-actions { width: 1%; white-space: nowrap; }
@@ -204,6 +228,7 @@
   background: var(--accent-bg);
   transition: background 0.15s, color 0.15s;
 }
+
 .network-action-link:hover {
   background: var(--accent);
   color: #000;
@@ -254,7 +279,7 @@
   }
 
   .network-table {
-    min-width: 700px; /* prevents collapse, allows horizontal scroll */
+    min-width: 700px;
   }
 
   .network-ip,
