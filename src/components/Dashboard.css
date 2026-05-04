@@ -309,6 +309,19 @@
   border-color: #a855f7;
   box-shadow: 0 0 0 1px #a855f7;
 }
+
+.findings-search {
+  background-color: #2f2f3a !important;
+  color: #a855f7 !important;
+}
+
+.findings-search {
+  transition: all 0.2s ease;
+}
+
+.findings-search:focus {
+  background-color: #3a3a4a;
+}
 }
 
 @media (max-width: 480px) {
