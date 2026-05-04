@@ -81,14 +81,34 @@
   flex-wrap: wrap;
 }
 
+/* ✅ FIXED INPUT (was white before) */
 .detail-search {
+  all: unset;
+
   flex: 1;
   min-width: 180px;
-  background: var(--bg-base);
-  border: 1px solid var(--border-default);
+  box-sizing: border-box;
+
+  background-color: #2f2f3a;
+  color: #a855f7;
+  border: 1px solid #444;
   border-radius: var(--radius-md);
+
   font-size: 12px;
   padding: 6px 10px;
+
+  caret-color: #a855f7;
+  transition: all 0.2s ease;
+}
+
+.detail-search::placeholder {
+  color: #888;
+}
+
+.detail-search:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 1px #a855f7;
+  background-color: #3a3a4a;
 }
 
 /* ── Pills ── */
