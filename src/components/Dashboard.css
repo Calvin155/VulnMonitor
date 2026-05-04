@@ -128,7 +128,7 @@
 }
 
 .legend-row-active {
-  background-color: #4c1d95; /* deeper purple */
+  background-color: #4c1d95;
   color: white;
 }
 
@@ -137,15 +137,14 @@
   align-items: center;
   gap: 8px;
 
-  background-color: #2f2f3a;   /* grey */
-  color: #a855f7;              /* purple */
+  background-color: #2f2f3a;
+  color: #a855f7;
   border: 1px solid #444;
   border-radius: 6px;
   padding: 6px 10px;
 
   cursor: pointer;
 
-  /* 🔑 THIS FIXES THE WHITE BOX */
   appearance: none;
   -webkit-appearance: none;
 }
@@ -223,8 +222,36 @@
   padding: 10px 16px;
 }
 
+/* ✅ GLOBAL FIX: Findings Search */
+.findings-search {
+  all: unset;
+  width: 100%;
+  box-sizing: border-box;
+
+  background-color: #2f2f3a;
+  color: #a855f7;
+  border: 1px solid #444;
+  border-radius: 6px;
+
+  padding: 8px 12px;
+  font-size: 14px;
+
+  caret-color: #a855f7;
+  transition: all 0.2s ease;
+}
+
+.findings-search::placeholder {
+  color: #888;
+}
+
+.findings-search:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 1px #a855f7;
+  background-color: #3a3a4a;
+}
+
 /* ─────────────────────────────────────────────
-   MOBILE OVERRIDES (APPENDED — DO NOT MOVE)
+   MOBILE OVERRIDES
 ───────────────────────────────────────────── */
 
 @media (max-width: 1024px) {
@@ -279,49 +306,6 @@
   .findings-search {
     width: 100%;
   }
-
-  .findings-search:focus {
-    width: 100%;
-  }
-
-  .findings-search {
-  all: unset;                 /* 💥 removes default input styling */
-
-  width: 100%;
-  box-sizing: border-box;
-
-  background-color: #2f2f3a;  /* grey */
-  color: #a855f7;             /* purple */
-  border: 1px solid #444;
-  border-radius: 6px;
-
-  padding: 8px 12px;
-  font-size: 14px;
-
-  caret-color: #a855f7;       /* purple cursor */
-}
-
-.findings-search::placeholder {
-  color: #888;
-}
-
-.findings-search:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 0 1px #a855f7;
-}
-
-.findings-search {
-  background-color: #2f2f3a !important;
-  color: #a855f7 !important;
-}
-
-.findings-search {
-  transition: all 0.2s ease;
-}
-
-.findings-search:focus {
-  background-color: #3a3a4a;
-}
 }
 
 @media (max-width: 480px) {
