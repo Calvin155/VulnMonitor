@@ -413,3 +413,161 @@ textarea:focus {
     border-radius: 14px;
   }
 }
+
+/* ─────────────────────────────
+   GLOBAL BUTTON BASE FIX
+───────────────────────────── */
+
+button {
+  font-family: var(--font-sans);
+}
+
+/* Base button reset */
+button:not(.spinner) {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* ─────────────────────────────
+   PRIMARY ACTION BUTTON (Run Scan)
+───────────────────────────── */
+
+.run-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+
+  background: linear-gradient(135deg, #a855f7, #6d28d9);
+  color: #fff;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  border: 1px solid rgba(168, 85, 247, 0.35);
+
+  transition: transform 0.1s ease, filter 0.2s ease, opacity 0.2s ease;
+}
+
+.run-btn:hover {
+  filter: brightness(1.1);
+}
+
+.run-btn:active {
+  transform: translateY(1px);
+}
+
+.run-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* running state */
+.run-btn.running {
+  background: linear-gradient(135deg, #4c1d95, #7c3aed);
+  border-color: rgba(124, 58, 237, 0.4);
+}
+
+/* ─────────────────────────────
+   SECONDARY BUTTONS (Cancel / Open)
+───────────────────────────── */
+
+.scan-cancel-btn,
+.status-open-btn,
+.scans-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+
+  font-size: 11px;
+
+  background: #2f2f3a;
+  color: #a855f7;
+
+  border: 1px solid #444;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.scan-cancel-btn:hover,
+.status-open-btn:hover,
+.scans-refresh:hover {
+  background: #3a3a4a;
+  border-color: #a855f7;
+}
+
+/* cancel is red tinted */
+.scan-cancel-btn {
+  color: #ff7c67;
+  border-color: rgba(255, 124, 103, 0.3);
+}
+
+.scan-cancel-btn:hover {
+  background: rgba(255, 124, 103, 0.08);
+  border-color: rgba(255, 124, 103, 0.6);
+}
+
+/* refresh button special */
+.scans-refresh {
+  width: 24px;
+  height: 24px;
+  justify-content: center;
+  padding: 0;
+  font-size: 14px;
+}
+
+/* ─────────────────────────────
+   FORM ACTION AREA
+───────────────────────────────────────────── */
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.running-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.submit-error {
+  font-size: 11px;
+  color: #ff4757;
+  background: rgba(255, 71, 87, 0.08);
+  border: 1px solid rgba(255, 71, 87, 0.25);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+}
+
+/* ─────────────────────────────
+   CHECKBOX BUTTON LOOK FIX (optional but important)
+───────────────────────────── */
+
+.check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.check-box {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid #444;
+  background: #2f2f3a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a855f7;
+}
