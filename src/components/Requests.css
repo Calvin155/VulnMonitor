@@ -287,29 +287,29 @@ textarea {
   box-sizing: border-box;
   width: 100%;
 
-  background-color: #2f2f3a;
-  color: #a855f7;
-  border: 1px solid #444;
+  background-color: var(--bg-card);
+  color: var(--accent-purple);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
 
   padding: 8px 12px;
   font-size: 14px;
 
-  caret-color: #a855f7;
+  caret-color: var(--accent-purple);
   transition: all 0.2s ease;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #888;
+  color: var(--text-muted);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 0 1px #a855f7;
-  background-color: #3a3a4a;
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 0 1px var(--accent-purple);
+  background-color: var(--bg-card-hover);
 }
 
 /* ─────────────────────────────
@@ -490,18 +490,18 @@ button:not(.spinner) {
 
   font-size: 11px;
 
-  background: #2f2f3a;
-  color: #a855f7;
+  background: var(--bg-card);
+  color: var(--accent-purple);
 
-  border: 1px solid #444;
+  border: 1px solid var(--border-subtle);
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .scan-cancel-btn:hover,
 .status-open-btn:hover,
 .scans-refresh:hover {
-  background: #3a3a4a;
-  border-color: #a855f7;
+  background: var(--bg-card-hover);
+  border-color: var(--accent-purple);
 }
 
 /* cancel is red tinted */
@@ -564,10 +564,10 @@ button:not(.spinner) {
   width: 14px;
   height: 14px;
   border-radius: 3px;
-  border: 1px solid #444;
-  background: #2f2f3a;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #a855f7;
+  color: var(--accent-purple);
 }

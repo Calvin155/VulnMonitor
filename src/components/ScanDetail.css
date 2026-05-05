@@ -89,26 +89,26 @@
   min-width: 180px;
   box-sizing: border-box;
 
-  background-color: #2f2f3a;
-  color: #a855f7;
-  border: 1px solid #444;
+  background-color: var(--bg-card);
+  color: var(--accent-purple);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
 
   font-size: 12px;
   padding: 6px 10px;
 
-  caret-color: #a855f7;
+  caret-color: var(--accent-purple);
   transition: all 0.2s ease;
 }
 
 .detail-search::placeholder {
-  color: #888;
+  color: var(--text-muted);
 }
 
 .detail-search:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 0 1px #a855f7;
-  background-color: #3a3a4a;
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 0 1px var(--accent-purple);
+  background-color: var(--bg-card-hover);
 }
 
 /* ── Pills ── */

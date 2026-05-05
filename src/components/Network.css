@@ -112,17 +112,17 @@
   width: 100%;
   box-sizing: border-box;
 
-  background-color: #2f2f3a;
-  color: #a855f7;
+  background-color: var(--bg-card);
+  color: var(--accent-purple);
 
-  border: 1px solid #444;
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
 
   font-family: var(--font-sans);
   font-size: 12px;
   padding: 6px 10px;
 
-  caret-color: #a855f7;
+  caret-color: var(--accent-purple);
   transition: all 0.15s ease;
 }
 
@@ -133,7 +133,7 @@
 .network-filter:focus {
   border-color: var(--border-accent);
   box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.08);
-  background-color: #3a3a4a;
+  background-color: var(--bg-card-hover);
 }
 
 .network-empty {
