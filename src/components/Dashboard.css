@@ -188,7 +188,7 @@
   flex-shrink: 0;
 }
 
-/* ── Activity Feed ── */
+/* ── Activity Feed (Upgraded) ── */
 .activity-card {
   display: flex;
   flex-direction: column;
@@ -202,78 +202,116 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
+/* List spacing */
 .activity-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 10px;
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: 12px;
 }
 
+/* Row container */
 .activity-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
-  padding: 12px;
-  background: var(--bg-base);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  margin-bottom: 8px;
-  transition: all 0.15s ease;
+  padding: 14px;
+
+  background: rgba(168, 85, 247, 0.04);
+  border: 1px solid rgba(168, 85, 247, 0.12);
+  border-radius: 12px;
+
+  transition: all 0.2s ease;
+  position: relative;
 }
 
-.activity-row:last-child {
-  margin-bottom: 0;
-}
-
+/* Hover interaction */
 .activity-row-clickable {
   cursor: pointer;
 }
+
 .activity-row-clickable:hover {
-  background: var(--bg-card);
-  border-color: var(--border-default);
-  transform: translateY(-1px);
+  background: rgba(168, 85, 247, 0.08);
+  border-color: rgba(168, 85, 247, 0.3);
+  transform: translateY(-2px);
 }
 
+/* Subtle glow layer */
+.activity-row::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.05);
+  pointer-events: none;
+}
+
+/* Left severity indicator */
 .activity-line {
-  width: 3px;
-  height: 40px;
-  border-radius: 2px;
+  width: 4px;
+  height: 36px;
+  border-radius: 4px;
   flex-shrink: 0;
-  margin-top: 2px;
 }
 
-.activity-content { 
-  flex: 1; 
+/* Severity colors (same as your system) */
+.activity-critical .activity-line { background: #ff4757; }
+.activity-high     .activity-line { background: #ff7c43; }
+.activity-medium   .activity-line { background: #ffd166; }
+.activity-low      .activity-line { background: #06d6a0; }
+.activity-info     .activity-line { background: #4cc9f0; }
+
+/* Optional glow based on severity */
+.activity-critical {
+  box-shadow: 0 0 0 1px rgba(255, 71, 87, 0.25);
+}
+.activity-high {
+  box-shadow: 0 0 0 1px rgba(255, 124, 67, 0.2);
+}
+
+/* Content layout */
+.activity-content {
+  flex: 1;
   min-width: 0;
 }
 
+/* Title (domain) */
 .activity-event {
-  font-size: 12.5px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 4px;
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Sub text */
 .activity-detail {
   font-size: 11px;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
+/* Time */
 .activity-time {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-muted);
-  white-space: nowrap;
   font-family: var(--font-mono);
+  white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* Badge spacing tweak */
+.activity-sev-badge {
+  margin-left: 6px;
 }
 
 /* ── Findings Card ── */
