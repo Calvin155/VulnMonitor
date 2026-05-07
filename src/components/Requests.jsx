@@ -59,11 +59,17 @@ function adaptScanForDetail(scan) {
   if (!scan) return null
   const vulnerabilities = flattenVulnerabilities(scan)
   return {
-    id:            scan.id,
-    domain:        scan.domain ?? scan.target ?? '—',
-    scanned_at:    scan.scanned_at ?? scan.completed_at ?? scan.started_at ?? null,
-    scan_summary:  scan.scan_summary ?? scan.summary ?? scan.report ?? '',
+    id:                   scan.id,
+    domain:               scan.domain ?? scan.target ?? '—',
+    target_ip:            scan.target_ip ?? null,
+    scanned_at:           scan.scanned_at ?? scan.completed_at ?? scan.started_at ?? null,
+    completed_at:         scan.completed_at ?? null,
+    scan_duration_seconds: scan.scan_duration_seconds ?? null,
+    scan_summary:         scan.scan_summary ?? scan.summary ?? scan.report ?? '',
     vulnerabilities,
+    network_scan:         scan.network_scan ?? null,
+    probes:               scan.probes ?? null,
+    msf:                  scan.msf ?? null,
   }
 }
 

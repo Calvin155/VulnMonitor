@@ -5,6 +5,22 @@ import { useAuth } from '../auth/AuthContext'
 import './ScanDetail.css'
 
 const SEV_ORDER = ['critical', 'high', 'medium', 'low', 'info', 'informational']
+
+// network_scan is stored as a Python-style dict string — convert to JS object
+function parsePyDict(val) {
+  if (!val) return null
+  if (typeof val === 'object') return val
+  try { return JSON.parse(val) } catch {}
+  try {
+    return JSON.parse(
+      val
+        .replace(/'/g, '"')
+        .replace(/\bNone\b/g, 'null')
+        .replace(/\bTrue\b/g, 'true')
+        .replace(/\bFalse\b/g, 'false')
+    )
+  } catch { return null }
+}
 const STATUS_LABELS = { new: 'New', reviewing: 'Reviewing', fixed: 'Fixed', fp: 'False Positive' }
 
 function normSev(v) {
@@ -20,6 +36,7 @@ const hint  = v => v.exploit_hint ?? null
 export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
   const { apiFetch } = useAuth()
   const [tab, setTab] = useState('findings')
+  const networkData = parsePyDict(scan.network_scan)
   const [expanded, setExpanded] = useState(new Set())
   const [search, setSearch] = useState('')
   const [sevFilter, setSevFilter] = useState(null)
@@ -114,9 +131,18 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
 
       <div className="detail-header">
         <div className="detail-header-info">
-          <div className="detail-domain">{scan.domain}</div>
+          <div className="detail-domain">
+            {scan.domain}
+            {scan.target_ip && scan.target_ip !== scan.domain && (
+              <span className="detail-target-ip">{scan.target_ip}</span>
+            )}
+          </div>
           <div className="detail-date">
-            {new Date(scan.scanned_at).toLocaleString()} &middot; {vulns.length} finding{vulns.length !== 1 ? 's' : ''}
+            {scan.scanned_at ? new Date(scan.scanned_at).toLocaleString() : '—'}
+            &nbsp;&middot;&nbsp;{vulns.length} finding{vulns.length !== 1 ? 's' : ''}
+            {scan.scan_duration_seconds != null && (
+              <>&nbsp;&middot;&nbsp;{scan.scan_duration_seconds}s</>
+            )}
           </div>
         </div>
         <button className="detail-close" onClick={onClose} title="Close (Esc)">&#x2715;</button>
@@ -126,6 +152,11 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
         <button className={`detail-tab${tab === 'findings' ? ' active' : ''}`} onClick={() => setTab('findings')}>
           Findings <span className="detail-tab-count">{vulns.length}</span>
         </button>
+        {networkData && (
+          <button className={`detail-tab${tab === 'network' ? ' active' : ''}`} onClick={() => setTab('network')}>
+            Network <span className="detail-tab-count">{networkData.live_count ?? (networkData.hosts?.length ?? '')}</span>
+          </button>
+        )}
         <button className={`detail-tab${tab === 'report' ? ' active' : ''}`} onClick={() => setTab('report')}>
           Report
         </button>
@@ -232,6 +263,48 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
             })}
           </div>
         </>
+      )}
+
+      {tab === 'network' && networkData && (
+        <div className="detail-network">
+          <div className="network-meta-bar">
+            <span className="network-meta-chip"><span className="nmc-label">Network</span>{networkData.network ?? '—'}</span>
+            <span className="network-meta-chip"><span className="nmc-label">Target</span>{networkData.target_ip ?? scan.target_ip ?? '—'}</span>
+            <span className="network-meta-chip"><span className="nmc-label">Live hosts</span>{networkData.live_count ?? networkData.hosts?.length ?? '—'}</span>
+          </div>
+          <div className="network-hosts">
+            {(networkData.hosts ?? []).map((host, i) => {
+              const isTarget = host.ip === networkData.target_ip
+              return (
+                <div key={i} className={`host-card${isTarget ? ' host-target' : ''}`}>
+                  <div className="host-header">
+                    <span className="host-ip">{host.ip}</span>
+                    {host.hostname && <span className="host-name">{host.hostname}</span>}
+                    {isTarget && <span className="host-target-badge">TARGET</span>}
+                  </div>
+                  {host.open_ports?.length > 0 ? (
+                    <div className="host-ports">
+                      <div className="ports-head">
+                        <span>Port</span><span>Service</span><span>Product</span>
+                      </div>
+                      {host.open_ports.map((p, j) => (
+                        <div key={j} className="port-row">
+                          <span className="port-num">{p.port}</span>
+                          <span className="port-service">{p.service || '—'}</span>
+                          <span className="port-product">
+                            {p.product || '—'}{p.version ? ` ${p.version}` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="host-no-ports">No open ports detected</div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
       )}
 
       {tab === 'report' && (
