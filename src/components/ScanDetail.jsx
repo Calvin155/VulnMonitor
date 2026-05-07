@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useAuth } from '../auth/AuthContext'
@@ -35,6 +35,24 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
         return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
       })
   )
+  const prevVulnLen = useRef(scan.vulnerabilities?.length ?? 0)
+
+  // Merge in new findings when the parent refreshes the scan during a live run
+  const vulnLen = scan.vulnerabilities?.length ?? 0
+  useEffect(() => {
+    if (vulnLen <= prevVulnLen.current) return
+    prevVulnLen.current = vulnLen
+    setVulns(prev => {
+      const statusMap = new Map(prev.map(v => [v._origIdx, v.status]))
+      return [...(scan.vulnerabilities ?? [])]
+        .map((v, i) => ({ ...v, _origIdx: i, status: statusMap.get(i) ?? v.status }))
+        .sort((a, b) => {
+          const ai = SEV_ORDER.indexOf((a.severity ?? '').toLowerCase())
+          const bi = SEV_ORDER.indexOf((b.severity ?? '').toLowerCase())
+          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+        })
+    })
+  }, [vulnLen])
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }

@@ -115,9 +115,48 @@ export default function Requests() {
   }
 
   useEffect(() => {
-    refreshHistory()
+    async function init() {
+      try {
+        const res = await fetch('/pentester/scans?limit=50')
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        const scanList = data.scans ?? []
+        setScans(scanList)
+        // Auto-resume tracking any in-flight scan from a previous session
+        const running = scanList.find(s => isRunningStatus(s.status))
+        if (running) {
+          setActiveScan(running)
+          if (pollAbort.current) pollAbort.current.aborted = true
+          const controller = { aborted: false }
+          pollAbort.current = controller
+          pollUntilDone(running.id, controller).then(final => {
+            if (!controller.aborted && final) refreshHistory()
+          })
+        }
+      } catch {
+        // surface silently
+      } finally {
+        setScansLoading(false)
+      }
+    }
+    init()
     return () => { if (pollAbort.current) pollAbort.current.aborted = true }
   }, [])
+
+  // While viewing a running scan's detail, refresh findings every 3s
+  useEffect(() => {
+    if (!selectedScan || !isRunning || activeScan?.id !== selectedScan.id) return
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch(`/pentester/scans/${selectedScan.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setSelectedScan(adaptScanForDetail(data))
+        }
+      } catch {}
+    }, 3000)
+    return () => clearInterval(id)
+  }, [selectedScan?.id, isRunning])
 
   // Pre-fill target when the Network tab fires "Scan →" on a host.
   useEffect(() => {
@@ -385,7 +424,7 @@ export default function Requests() {
             )}
             {scans.map(s => {
               const status = (s.status ?? '').toLowerCase()
-              const clickable = status === 'completed'
+              const clickable = status === 'completed' || isRunningStatus(status)
               const isSelected = selectedScan?.id === s.id
               return (
                 <div

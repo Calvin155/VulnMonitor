@@ -7,6 +7,7 @@
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+  flex: 1;
 }
 
 .detail-header {
@@ -196,11 +197,23 @@
   align-items: center;
   justify-content: center;
   padding: 32px;
+  z-index: 100;
+  overflow-y: auto;
 }
 
 .scan-modal-shell {
   width: 100%;
   max-width: 880px;
+  max-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  margin: auto;
+}
+
+.detail-modal {
+  height: 100%;
+  max-height: calc(100vh - 64px);
 }
 
 /* ─────────────────────────────────────────────
@@ -274,6 +287,11 @@
 
   .scan-modal-shell {
     max-width: 100%;
+    max-height: calc(100vh - 24px);
+  }
+
+  .detail-modal {
+    max-height: calc(100vh - 24px);
   }
 }
 
