@@ -170,7 +170,7 @@ app.get('/api/auth/setup-required', async (_req, res) => {
 // In production (no Vite), Express proxies it so the same URLs work.
 const PENTESTER_URL = process.env.PENTESTER_URL || 'http://localhost:8000'
 
-app.all('/pentester/*', async (req, res) => {
+app.all('/pentester/*path', async (req, res) => {
   const tail = req.url.slice('/pentester'.length)
   try {
     const opts = { method: req.method }
@@ -485,7 +485,7 @@ app.get('/api/scans/:id/stream', (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   const dist = path.join(__dirname, 'dist')
   app.use(express.static(dist))
-  app.get('*', (req, res) => {
+  app.get('*path', (req, res) => {
     if (!req.path.startsWith('/api') && !req.path.startsWith('/pentester')) {
       res.sendFile(path.join(dist, 'index.html'))
     }
