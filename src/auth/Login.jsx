@@ -2,15 +2,41 @@ import { useState } from 'react'
 import { useAuth } from './AuthContext'
 import './Login.css'
 
+function ShieldLogo() {
+  return (
+    <div className="login-brand">
+      <div className="login-brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <div className="login-brand-name">VULNREVIEW</div>
+        <div className="login-brand-sub">AI Pentest Monitor</div>
+      </div>
+    </div>
+  )
+}
+
 export default function Login() {
   const { login, register, setupRequired } = useAuth()
+  const [mode, setMode] = useState('login') // 'login' | 'signup'
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm]   = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
-  const isRegister = setupRequired
+  const isFirstRun = setupRequired
+  const isRegister = isFirstRun || mode === 'signup'
+
+  function switchMode(next) {
+    setMode(next)
+    setError(null)
+    setUsername('')
+    setPassword('')
+    setConfirm('')
+  }
 
   async function onSubmit(e) {
     e.preventDefault()
@@ -45,25 +71,15 @@ export default function Login() {
   return (
     <div className="login-shell">
       <form className="login-card" onSubmit={onSubmit}>
-        <div className="login-brand">
-          <div className="login-brand-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-          </div>
-          <div>
-            <div className="login-brand-name">VULNREVIEW</div>
-            <div className="login-brand-sub">AI Pentest Monitor</div>
-          </div>
-        </div>
+        <ShieldLogo />
 
         <h1 className="login-title">
-          {isRegister ? 'Create the first user' : 'Sign in'}
+          {isFirstRun ? 'Create the first user' : isRegister ? 'Create account' : 'Sign in'}
         </h1>
-        {isRegister && (
+
+        {isFirstRun && (
           <p className="login-subtitle">
             No accounts exist yet — this user will be the initial admin.
-            After this, registration is closed and only signed-in users can add new ones.
           </p>
         )}
 
@@ -110,6 +126,24 @@ export default function Login() {
             ? (isRegister ? 'Creating account...' : 'Signing in...')
             : (isRegister ? 'Create account' : 'Sign in')}
         </button>
+
+        {!isFirstRun && (
+          <p className="login-switch">
+            {mode === 'login' ? (
+              <>Don&apos;t have an account?{' '}
+                <button type="button" className="login-switch-btn" onClick={() => switchMode('signup')}>
+                  Sign up
+                </button>
+              </>
+            ) : (
+              <>Already have an account?{' '}
+                <button type="button" className="login-switch-btn" onClick={() => switchMode('login')}>
+                  Sign in
+                </button>
+              </>
+            )}
+          </p>
+        )}
       </form>
     </div>
   )

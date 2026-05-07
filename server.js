@@ -45,6 +45,14 @@ async function initSchema() {
       created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `)
+  // Add role column if this is an existing DB without it
+  await pool.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'
+  `)
+  // Ensure the calvin user is always admin
+  await pool.query(`
+    UPDATE users SET role = 'admin' WHERE username = 'calvin'
+  `)
 }
 initSchema().catch(err => {
   console.error('[auth] Failed to init users table:', err.message)
@@ -58,7 +66,7 @@ app.use(express.json())
 // ── Auth helpers ─────────────────────────────────────────────────────────
 
 function signToken(user) {
-  return jwt.sign({ sub: user.id, username: user.username }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
+  return jwt.sign({ sub: user.id, username: user.username, role: user.role ?? 'user' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
 }
 
 function authMiddleware(req, res, next) {
@@ -98,19 +106,13 @@ app.post('/api/auth/register', tryAuth, async (req, res) => {
   if (password.length > 200)           return res.status(400).json({ error: 'password too long' })
 
   try {
-    const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM users')
-    const isFirstRun = rows[0].n === 0
-    if (!isFirstRun && !req.user) {
-      return res.status(403).json({ error: 'registration is closed; sign in first' })
-    }
-
     const hash = await bcrypt.hash(password, BCRYPT_COST)
     const ins = await pool.query(
-      'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, created_at',
+      'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, role, created_at',
       [u, hash]
     )
     const user = ins.rows[0]
-    res.status(201).json({ token: signToken(user), user: { id: user.id, username: user.username } })
+    res.status(201).json({ token: signToken(user), user: { id: user.id, username: user.username, role: user.role } })
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'username taken' })
     res.status(500).json({ error: err.message })
@@ -124,7 +126,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
   try {
     const { rows } = await pool.query(
-      'SELECT id, username, password_hash FROM users WHERE username = $1',
+      'SELECT id, username, role, password_hash FROM users WHERE username = $1',
       [username.trim()]
     )
     const user = rows[0]
@@ -133,7 +135,7 @@ app.post('/api/auth/login', async (req, res) => {
     const ok = await bcrypt.compare(password, hash)
     if (!user || !ok) return res.status(401).json({ error: 'invalid credentials' })
 
-    res.json({ token: signToken(user), user: { id: user.id, username: user.username } })
+    res.json({ token: signToken(user), user: { id: user.id, username: user.username, role: user.role } })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
@@ -142,7 +144,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/me', authMiddleware, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, username, created_at FROM users WHERE id = $1',
+      'SELECT id, username, role, created_at FROM users WHERE id = $1',
       [req.user.sub]
     )
     if (!rows[0]) return res.status(401).json({ error: 'user no longer exists' })
@@ -163,6 +165,79 @@ app.get('/api/auth/setup-required', async (_req, res) => {
 
 // Everything below this line requires a valid JWT.
 app.use('/api', authMiddleware)
+
+// ── Admin middleware ─────────────────────────────────────────────────────
+function adminOnly(req, res, next) {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'admin required' })
+  next()
+}
+
+// ── Admin: user management ───────────────────────────────────────────────
+
+app.get('/api/admin/users', adminOnly, async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, username, role, created_at FROM users ORDER BY created_at ASC'
+    )
+    res.json(rows)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/admin/users', adminOnly, async (req, res) => {
+  const { username, password, role = 'user' } = req.body || {}
+  if (typeof username !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ error: 'username and password required' })
+  }
+  const u = username.trim()
+  if (u.length < 3 || u.length > 64)  return res.status(400).json({ error: 'username must be 3–64 chars' })
+  if (password.length < 8)            return res.status(400).json({ error: 'password must be at least 8 chars' })
+  if (password.length > 200)          return res.status(400).json({ error: 'password too long' })
+  if (!['admin', 'user'].includes(role)) return res.status(400).json({ error: 'invalid role' })
+  try {
+    const hash = await bcrypt.hash(password, BCRYPT_COST)
+    const { rows } = await pool.query(
+      'INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) RETURNING id, username, role, created_at',
+      [u, hash, role]
+    )
+    res.status(201).json(rows[0])
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'username taken' })
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.patch('/api/admin/users/:id/role', adminOnly, async (req, res) => {
+  const { role } = req.body || {}
+  if (!['admin', 'user'].includes(role)) return res.status(400).json({ error: 'invalid role' })
+  if (Number(req.params.id) === req.user.sub) {
+    return res.status(400).json({ error: 'cannot change your own role' })
+  }
+  try {
+    const { rowCount, rows } = await pool.query(
+      'UPDATE users SET role = $1 WHERE id = $2 RETURNING id, username, role',
+      [role, req.params.id]
+    )
+    if (rowCount === 0) return res.status(404).json({ error: 'user not found' })
+    res.json(rows[0])
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.delete('/api/admin/users/:id', adminOnly, async (req, res) => {
+  if (Number(req.params.id) === req.user.sub) {
+    return res.status(400).json({ error: 'cannot delete your own account' })
+  }
+  try {
+    const { rowCount } = await pool.query('DELETE FROM users WHERE id = $1', [req.params.id])
+    if (rowCount === 0) return res.status(404).json({ error: 'user not found' })
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 // Aggregate stats across all scans
 app.get('/api/stats', async (req, res) => {

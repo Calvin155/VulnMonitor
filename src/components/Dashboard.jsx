@@ -3,6 +3,7 @@ import { ScanDetailModal } from './ScanDetail'
 import { useAuth } from '../auth/AuthContext'
 import './Dashboard.css'
 
+
 const SEV_ORDER = ['critical', 'high', 'medium', 'low', 'info']
 const SEV_COLORS = {
   critical: '#ff4757',
@@ -136,7 +137,7 @@ function compareBy(a, b, key) {
 }
 
 export default function Dashboard() {
-  const { apiFetch } = useAuth()
+  const { apiFetch, user } = useAuth()
   const { data: stats, loading: statsLoading }   = useApi('/api/stats', apiFetch)
   const { data: scans, loading: scansLoading }   = useApi('/api/scans', apiFetch)
   const { data: vulns, loading: vulnsLoading }   = useApi('/api/vulnerabilities', apiFetch)
@@ -218,6 +219,13 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard">
+
+      <div className="dashboard-page-header">
+        <div>
+          <h1 className="dashboard-page-title">Welcome back, {user?.username}</h1>
+          <p className="dashboard-page-sub">Your security posture at a glance.</p>
+        </div>
+      </div>
 
       {/* ── Stat Cards ── */}
       <div className="stats-row">
