@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "concurrently -n server,vite -c cyan,magenta \"JWT_SECRET=change-me npm run server\" \"npm run dev\"",
+    "start": "npx concurrently -n server,vite -c cyan,magenta \"JWT_SECRET=change-me npm run server\" \"npm run dev\"",
     "dev": "vite",
     "server": "node server.js",
     "build": "vite build",
