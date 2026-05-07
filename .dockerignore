@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+*.pem
+*.key
+*.crt
+certs/
+.git
+.gitignore
+README.md
+STATUS.md
+scripts/

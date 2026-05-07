@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken'
 import { spawn } from 'child_process'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { createServer as createHttpsServer } from 'https'
+import { existsSync, readFileSync } from 'fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -160,6 +162,31 @@ app.get('/api/auth/setup-required', async (_req, res) => {
     res.json({ setup_required: rows[0].n === 0 })
   } catch (err) {
     res.status(500).json({ error: err.message })
+  }
+})
+
+// ── Pentester API proxy ──────────────────────────────────────────────────────
+// In dev, Vite handles /pentester/* → localhost:8000.
+// In production (no Vite), Express proxies it so the same URLs work.
+const PENTESTER_URL = process.env.PENTESTER_URL || 'http://localhost:8000'
+
+app.all('/pentester/*', async (req, res) => {
+  const tail = req.url.slice('/pentester'.length)
+  try {
+    const opts = { method: req.method }
+    if (!['GET', 'HEAD'].includes(req.method) && Object.keys(req.body ?? {}).length) {
+      opts.body    = JSON.stringify(req.body)
+      opts.headers = { 'content-type': 'application/json' }
+    }
+    const up = await fetch(`${PENTESTER_URL}${tail}`, opts)
+    res.status(up.status)
+    for (const h of ['content-type', 'content-disposition']) {
+      const v = up.headers.get(h)
+      if (v) res.setHeader(h, v)
+    }
+    res.send(Buffer.from(await up.arrayBuffer()))
+  } catch (err) {
+    res.status(502).json({ error: 'pentester unreachable', detail: err.message })
   }
 })
 
@@ -454,7 +481,26 @@ app.get('/api/scans/:id/stream', (req, res) => {
   req.on('close', () => scan.clients.delete(res))
 })
 
-const PORT = 3001
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`API server listening on http://0.0.0.0:${PORT}`)
-})
+// ── Static frontend (production only) ────────────────────────────────────────
+if (process.env.NODE_ENV === 'production') {
+  const dist = path.join(__dirname, 'dist')
+  app.use(express.static(dist))
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/pentester')) {
+      res.sendFile(path.join(dist, 'index.html'))
+    }
+  })
+}
+
+// ── Start server (HTTP or HTTPS) ──────────────────────────────────────────────
+const PORT     = Number(process.env.PORT) || 3001
+const TLS_CERT = process.env.TLS_CERT
+const TLS_KEY  = process.env.TLS_KEY
+const hasTls   = TLS_CERT && TLS_KEY && existsSync(TLS_CERT) && existsSync(TLS_KEY)
+
+if (hasTls) {
+  createHttpsServer({ cert: readFileSync(TLS_CERT), key: readFileSync(TLS_KEY) }, app)
+    .listen(PORT, '0.0.0.0', () => console.log(`HTTPS server listening on :${PORT}`))
+} else {
+  app.listen(PORT, '0.0.0.0', () => console.log(`HTTP server listening on :${PORT}`))
+}

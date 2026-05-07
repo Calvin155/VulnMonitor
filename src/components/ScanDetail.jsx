@@ -1,12 +1,18 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useAuth } from '../auth/AuthContext'
 import './ScanDetail.css'
 
 const SEV_ORDER = ['critical', 'high', 'medium', 'low', 'info', 'informational']
+const STATUS_LABELS = { new: 'New', reviewing: 'Reviewing', fixed: 'Fixed', fp: 'False Positive' }
 
-// network_scan is stored as a Python-style dict string — convert to JS object
+function normSev(v) { return (v.severity ?? 'info').toLowerCase().replace('informational', 'info') }
+const cat  = v => v.category    ?? v.owasp          ?? null
+const rem  = v => v.remediation ?? v.recommendation ?? null
+const hint = v => v.exploit_hint ?? null
+
+// network_scan / msf / scan_options may be stored as Python-style dict strings
 function parsePyDict(val) {
   if (!val) return null
   if (typeof val === 'object') return val
@@ -21,27 +27,156 @@ function parsePyDict(val) {
     )
   } catch { return null }
 }
-const STATUS_LABELS = { new: 'New', reviewing: 'Reviewing', fixed: 'Fixed', fp: 'False Positive' }
 
-function normSev(v) {
-  return (v.severity ?? 'info').toLowerCase().replace('informational', 'info')
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function CveDetail({ cveId, cveCache, onFetch }) {
+  useEffect(() => { onFetch(cveId) }, [cveId])
+  const cve = cveCache[cveId]
+  if (!cve || cve === 'loading') return (
+    <div className="vuln-section">
+      <div className="vuln-section-label">CVE — {cveId}</div>
+      <p className="vuln-section-text cve-loading">Fetching NVD data...</p>
+    </div>
+  )
+  if (cve === 'error') return null
+  return (
+    <div className="vuln-section">
+      <div className="vuln-section-label">CVE — {cveId}</div>
+      <div className="cve-detail-body">
+        <div className="cve-chips">
+          {cve.cvss_score != null && <span className="cve-chip">CVSS {cve.cvss_score}</span>}
+          {cve.severity   && <span className={`cve-chip cve-sev-${cve.severity.toLowerCase()}`}>{cve.severity}</span>}
+          {cve.vector     && <span className="cve-chip cve-vector" title={cve.vector}>{cve.vector.split('/')[0]}</span>}
+        </div>
+        {cve.description && <p className="cve-desc">{cve.description}</p>}
+        {cve.nvd_link && (
+          <a className="cve-nvd-link" href={cve.nvd_link} target="_blank" rel="noreferrer">View on NVD →</a>
+        )}
+      </div>
+    </div>
+  )
 }
 
-// Pentester writes `owasp` / `recommendation`; the legacy schema used `category` / `remediation`.
-// Resolve either so the UI shows the data regardless of source.
-const cat   = v => v.category    ?? v.owasp          ?? null
-const rem   = v => v.remediation ?? v.recommendation ?? null
-const hint  = v => v.exploit_hint ?? null
+function ReconCheck({ name, output }) {
+  const [open, setOpen] = useState(false)
+  const text = typeof output === 'string' ? output : JSON.stringify(output, null, 2)
+  if (!text || text === '{}' || text === 'null' || !text.trim()) return null
+  return (
+    <div className="recon-check">
+      <button className="recon-check-header" onClick={() => setOpen(o => !o)}>
+        <span className="recon-check-name">{name.replace(/_/g, ' ')}</span>
+        <span className="vuln-chevron">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && <pre className="recon-check-body">{text}</pre>}
+    </div>
+  )
+}
+
+function ProbeResult({ probe }) {
+  const type = (probe.probe ?? probe.type ?? '').toLowerCase()
+
+  if (type === 'credentials') {
+    const results   = probe.results ?? probe.findings ?? []
+    const successes = results.filter(r => r.success)
+    return (
+      <div className="probe-card">
+        <div className="probe-header">
+          <span className="probe-name">Credential Probe</span>
+          {successes.length > 0
+            ? <span className="probe-badge probe-badge-success">{successes.length} credential{successes.length !== 1 ? 's' : ''} found</span>
+            : <span className="probe-badge">No valid credentials</span>}
+        </div>
+        {results.map((r, i) => (
+          <div key={i} className={`probe-result ${r.success ? 'probe-success' : 'probe-fail'}`}>
+            <div className="probe-result-header">
+              <span className={`probe-status-dot${r.success ? ' success' : ''}`} />
+              <span className="probe-endpoint">{r.endpoint ?? r.url ?? '—'}</span>
+            </div>
+            {r.command  && <pre className="probe-command">{r.command}</pre>}
+            {r.evidence && <p  className="probe-evidence">{r.evidence}</p>}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (type === 'nmap') {
+    const hosts = probe.hosts ?? probe.results ?? []
+    return (
+      <div className="probe-card">
+        <div className="probe-header">
+          <span className="probe-name">Port Scan (Nmap)</span>
+          <span className="probe-badge">{hosts.length} host{hosts.length !== 1 ? 's' : ''}</span>
+        </div>
+        {hosts.map((h, i) => (
+          <div key={i} className="probe-host">
+            <div className="probe-host-row">
+              <span className="host-ip">{h.ip}</span>
+              {h.hostname && <span className="host-name">{h.hostname}</span>}
+            </div>
+            {(h.ports ?? h.open_ports ?? []).length > 0 && (
+              <div className="host-ports">
+                <div className="ports-head"><span>Port</span><span>Service</span><span>Product</span></div>
+                {(h.ports ?? h.open_ports ?? []).map((p, j) => (
+                  <div key={j} className="port-row">
+                    <span className="port-num">{p.port}</span>
+                    <span className="port-service">{p.service || '—'}</span>
+                    <span className="port-product">{[p.product, p.version].filter(Boolean).join(' ') || '—'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // Generic fallback — show whatever shape we got
+  return (
+    <div className="probe-card">
+      <div className="probe-header">
+        <span className="probe-name">{probe.probe ?? probe.type ?? 'Probe'}</span>
+      </div>
+      <pre className="probe-raw">{JSON.stringify(probe, null, 2)}</pre>
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
   const { apiFetch } = useAuth()
-  const [tab, setTab] = useState('findings')
-  const networkData = parsePyDict(scan.network_scan)
-  const [expanded, setExpanded] = useState(new Set())
-  const [search, setSearch] = useState('')
-  const [sevFilter, setSevFilter] = useState(null)
-  const [statusFilter, setStatusFilter] = useState(null)
-  const [statusError, setStatusError] = useState(null)
+  const [tab, setTab]               = useState('findings')
+  const [expanded, setExpanded]     = useState(new Set())
+  const [search, setSearch]         = useState('')
+  const [sevFilter, setSevFilter]   = useState(null)
+  const [cveCache, setCveCache]     = useState({})
+
+  const networkData = useMemo(() => parsePyDict(scan.network_scan), [scan.network_scan])
+
+  const probesData = useMemo(() => {
+    const raw = scan.probes
+    if (!raw) return null
+    if (Array.isArray(raw) && raw.length > 0) return raw
+    const parsed = parsePyDict(raw)
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null
+  }, [scan.probes])
+
+  const msfData = useMemo(() => {
+    const raw = scan.msf
+    if (!raw) return null
+    const parsed = typeof raw === 'object' && !Array.isArray(raw) ? raw : parsePyDict(raw)
+    if (!parsed || Object.keys(parsed).length === 0) return null
+    return parsed
+  }, [scan.msf])
+
+  const scanOpts = useMemo(() => {
+    const raw = scan.scan_options
+    if (!raw) return null
+    return typeof raw === 'object' ? raw : parsePyDict(raw)
+  }, [scan.scan_options])
 
   const [vulns, setVulns] = useState(() =>
     [...(scan.vulnerabilities ?? [])]
@@ -53,8 +188,6 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
       })
   )
   const prevVulnLen = useRef(scan.vulnerabilities?.length ?? 0)
-
-  // Merge in new findings when the parent refreshes the scan during a live run
   const vulnLen = scan.vulnerabilities?.length ?? 0
   useEffect(() => {
     if (vulnLen <= prevVulnLen.current) return
@@ -101,6 +234,18 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
     }
   }
 
+  async function fetchCve(cveId) {
+    if (!cveId || cveCache[cveId]) return
+    setCveCache(prev => ({ ...prev, [cveId]: 'loading' }))
+    try {
+      const res  = await fetch(`/pentester/cve/${encodeURIComponent(cveId)}`)
+      const data = await res.json()
+      setCveCache(prev => ({ ...prev, [cveId]: res.ok ? data : 'error' }))
+    } catch {
+      setCveCache(prev => ({ ...prev, [cveId]: 'error' }))
+    }
+  }
+
   const sevCounts = vulns.reduce((acc, v) => {
     const s = normSev(v)
     acc[s] = (acc[s] ?? 0) + 1
@@ -109,7 +254,6 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
 
   const filtered = vulns.filter(v => {
     if (sevFilter && normSev(v) !== sevFilter) return false
-    if (statusFilter && (v.status ?? 'new') !== statusFilter) return false
     if (search) {
       const q = search.toLowerCase()
       const blob = [v.name, v.description, v.remediation, v.category, v.cve]
@@ -119,16 +263,13 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
     return true
   })
 
-  function expandAll() {
-    setExpanded(new Set(filtered.map((_, i) => i)))
-  }
-  function collapseAll() {
-    setExpanded(new Set())
-  }
+  function expandAll()   { setExpanded(new Set(filtered.map((_, i) => i))) }
+  function collapseAll() { setExpanded(new Set()) }
 
   return (
     <div className={`card detail-panel detail-${variant}`}>
 
+      {/* ── Header ── */}
       <div className="detail-header">
         <div className="detail-header-info">
           <div className="detail-domain">
@@ -140,28 +281,52 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
           <div className="detail-date">
             {scan.scanned_at ? new Date(scan.scanned_at).toLocaleString() : '—'}
             &nbsp;&middot;&nbsp;{vulns.length} finding{vulns.length !== 1 ? 's' : ''}
-            {scan.scan_duration_seconds != null && (
-              <>&nbsp;&middot;&nbsp;{scan.scan_duration_seconds}s</>
-            )}
+            {scan.scan_duration_seconds != null && <>&nbsp;&middot;&nbsp;{scan.scan_duration_seconds}s</>}
           </div>
+          {scanOpts && (
+            <div className="detail-scan-opts">
+              {scanOpts.wordlist && <span className="scan-opt-pill">{scanOpts.wordlist}</span>}
+              {scanOpts.model   && <span className="scan-opt-pill">{scanOpts.model}</span>}
+              {scanOpts.exploit && <span className="scan-opt-pill scan-opt-exploit">exploit mode</span>}
+            </div>
+          )}
         </div>
-        <button className="detail-close" onClick={onClose} title="Close (Esc)">&#x2715;</button>
+        <div className="detail-header-actions">
+          {scan.id && (
+            <>
+              <a className="export-btn" href={`/pentester/scans/${scan.id}/export?format=csv`} download title="Download findings as CSV">CSV</a>
+              <a className="export-btn" href={`/pentester/scans/${scan.id}/export?format=markdown`} download title="Download full report">Report ↓</a>
+            </>
+          )}
+          <button className="detail-close" onClick={onClose} title="Close (Esc)">&#x2715;</button>
+        </div>
       </div>
 
+      {/* ── Tabs ── */}
       <div className="detail-tabs">
         <button className={`detail-tab${tab === 'findings' ? ' active' : ''}`} onClick={() => setTab('findings')}>
           Findings <span className="detail-tab-count">{vulns.length}</span>
         </button>
+        {scan.recon && (
+          <button className={`detail-tab${tab === 'recon' ? ' active' : ''}`} onClick={() => setTab('recon')}>Recon</button>
+        )}
         {networkData && (
           <button className={`detail-tab${tab === 'network' ? ' active' : ''}`} onClick={() => setTab('network')}>
-            Network <span className="detail-tab-count">{networkData.live_count ?? (networkData.hosts?.length ?? '')}</span>
+            Network <span className="detail-tab-count">{networkData.live_count ?? networkData.hosts?.length ?? ''}</span>
           </button>
         )}
-        <button className={`detail-tab${tab === 'report' ? ' active' : ''}`} onClick={() => setTab('report')}>
-          Report
-        </button>
+        {probesData && (
+          <button className={`detail-tab${tab === 'probes' ? ' active' : ''}`} onClick={() => setTab('probes')}>
+            Probes <span className="detail-tab-count">{probesData.length}</span>
+          </button>
+        )}
+        {msfData && (
+          <button className={`detail-tab${tab === 'msf' ? ' active' : ''}`} onClick={() => setTab('msf')}>MSF</button>
+        )}
+        <button className={`detail-tab${tab === 'report' ? ' active' : ''}`} onClick={() => setTab('report')}>Report</button>
       </div>
 
+      {/* ── Findings ── */}
       {tab === 'findings' && (
         <>
           <div className="detail-toolbar">
@@ -186,10 +351,8 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
                   </button>
                 )
               })}
-              {(sevFilter || statusFilter || search) && (
-                <button className="sev-pill-clear" onClick={() => { setSevFilter(null); setStatusFilter(null); setSearch('') }}>
-                  Clear
-                </button>
+              {(sevFilter || search) && (
+                <button className="sev-pill-clear" onClick={() => { setSevFilter(null); setSearch('') }}>Clear</button>
               )}
             </div>
             <div className="detail-toolbar-actions">
@@ -216,9 +379,9 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
                       {v.status && v.status !== 'new' && (
                         <span className={`badge badge-${v.status}`}>{STATUS_LABELS[v.status]}</span>
                       )}
-                      {cat(v)  && <span className="vuln-tag">{cat(v)}</span>}
-                      {v.cve   && <span className="vuln-tag vuln-cve">{v.cve}</span>}
-                      {v.cvss  && <span className="vuln-tag vuln-cvss">CVSS {v.cvss}</span>}
+                      {cat(v) && <span className="vuln-tag">{cat(v)}</span>}
+                      {v.cve  && <span className="vuln-tag vuln-cve">{v.cve}</span>}
+                      {v.cvss && <span className="vuln-tag vuln-cvss">CVSS {v.cvss}</span>}
                     </div>
                     <span className="vuln-chevron">{expanded.has(i) ? '▲' : '▼'}</span>
                   </div>
@@ -242,6 +405,7 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
                           <p className="vuln-section-text">{hint(v)}</p>
                         </div>
                       )}
+                      {v.cve && <CveDetail cveId={v.cve} cveCache={cveCache} onFetch={fetchCve} />}
                       <div className="vuln-section vuln-status-section">
                         <div className="vuln-section-label">Status</div>
                         <div className="status-btns">
@@ -265,6 +429,30 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
         </>
       )}
 
+      {/* ── Recon ── */}
+      {tab === 'recon' && (
+        <div className="detail-recon">
+          {scan.recon && (
+            <div className="recon-summary">
+              <div className="recon-summary-label">AI Recon Summary</div>
+              <p className="recon-summary-text">{scan.recon}</p>
+            </div>
+          )}
+          {scan.raw_recon && typeof scan.raw_recon === 'object' && Object.keys(scan.raw_recon).length > 0 && (
+            <div className="recon-raw-section">
+              <div className="recon-summary-label">Raw Check Output</div>
+              {Object.entries(scan.raw_recon).map(([name, output]) => (
+                <ReconCheck key={name} name={name} output={output} />
+              ))}
+            </div>
+          )}
+          {!scan.recon && (!scan.raw_recon || Object.keys(scan.raw_recon ?? {}).length === 0) && (
+            <div className="detail-empty">No recon data available.</div>
+          )}
+        </div>
+      )}
+
+      {/* ── Network ── */}
       {tab === 'network' && networkData && (
         <div className="detail-network">
           <div className="network-meta-bar">
@@ -284,16 +472,12 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
                   </div>
                   {host.open_ports?.length > 0 ? (
                     <div className="host-ports">
-                      <div className="ports-head">
-                        <span>Port</span><span>Service</span><span>Product</span>
-                      </div>
+                      <div className="ports-head"><span>Port</span><span>Service</span><span>Product</span></div>
                       {host.open_ports.map((p, j) => (
                         <div key={j} className="port-row">
                           <span className="port-num">{p.port}</span>
                           <span className="port-service">{p.service || '—'}</span>
-                          <span className="port-product">
-                            {p.product || '—'}{p.version ? ` ${p.version}` : ''}
-                          </span>
+                          <span className="port-product">{p.product || '—'}{p.version ? ` ${p.version}` : ''}</span>
                         </div>
                       ))}
                     </div>
@@ -307,6 +491,55 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
         </div>
       )}
 
+      {/* ── Probes ── */}
+      {tab === 'probes' && (
+        <div className="detail-probes">
+          {(!probesData || probesData.length === 0)
+            ? <div className="detail-empty">No probe data available.</div>
+            : probesData.map((probe, i) => <ProbeResult key={i} probe={probe} />)
+          }
+        </div>
+      )}
+
+      {/* ── MSF ── */}
+      {tab === 'msf' && (
+        <div className="detail-msf">
+          {!msfData ? (
+            <div className="detail-empty">No Metasploit data available.</div>
+          ) : (
+            <>
+              {msfData.suggestions && (
+                <div className="msf-section">
+                  <div className="msf-section-label">Suggested Modules</div>
+                  <div className="msf-modules">
+                    {(Array.isArray(msfData.suggestions) ? msfData.suggestions : [msfData.suggestions]).map((m, i) => (
+                      <div key={i} className="msf-module">
+                        <span className="msf-module-name">
+                          {typeof m === 'string' ? m : (m.module ?? m.name ?? JSON.stringify(m))}
+                        </span>
+                        {m.description && <span className="msf-module-desc">{m.description}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {msfData.auxiliary && (
+                <div className="msf-section">
+                  <div className="msf-section-label">Auxiliary Scanner Output</div>
+                  <pre className="msf-output">
+                    {typeof msfData.auxiliary === 'string' ? msfData.auxiliary : JSON.stringify(msfData.auxiliary, null, 2)}
+                  </pre>
+                </div>
+              )}
+              {!msfData.suggestions && !msfData.auxiliary && (
+                <pre className="msf-output">{JSON.stringify(msfData, null, 2)}</pre>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Report ── */}
       {tab === 'report' && (
         <div className="detail-report">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>

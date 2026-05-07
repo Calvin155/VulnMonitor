@@ -209,7 +209,7 @@ export default function App() {
                   onClick={() => { setActiveTab('network'); setSecurityOpen(false) }}
                 >
                   <NetworkIcon />
-                  My Network
+                  Network Scan
                 </button>
               </div>
             )}

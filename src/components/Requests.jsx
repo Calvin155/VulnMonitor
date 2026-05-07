@@ -70,6 +70,9 @@ function adaptScanForDetail(scan) {
     network_scan:         scan.network_scan ?? null,
     probes:               scan.probes ?? null,
     msf:                  scan.msf ?? null,
+    recon:                scan.recon ?? null,
+    raw_recon:            scan.raw_recon ?? null,
+    scan_options:         scan.scan_options ?? null,
   }
 }
 

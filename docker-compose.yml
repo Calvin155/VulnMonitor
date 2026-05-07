@@ -1,0 +1,29 @@
+services:
+  vulnmonitor:
+    build: .
+    image: vulnmonitor:latest
+    container_name: vulnmonitor
+    restart: unless-stopped
+    ports:
+      - "${PORT:-443}:${PORT:-443}"
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT:-443}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      PGHOST: ${PGHOST:-db}
+      PGPORT: ${PGPORT:-5432}
+      PGDATABASE: ${PGDATABASE:-pentester}
+      PGUSER: ${PGUSER:-pentester}
+      PGPASSWORD: ${PGPASSWORD:?Set PGPASSWORD in .env}
+      PENTESTER_URL: ${PENTESTER_URL:-http://api:8000}
+      TLS_CERT: /app/certs/cert.pem
+      TLS_KEY: /app/certs/key.pem
+    volumes:
+      - ./certs:/app/certs:ro
+    networks:
+      - pentester_net
+
+networks:
+  pentester_net:
+    external: true
+    name: ${PENTESTER_NETWORK:?Run 'docker network ls' and set PENTESTER_NETWORK in .env}

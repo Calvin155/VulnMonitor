@@ -54,7 +54,7 @@ export default function Network() {
 
       <div className="card network-card">
         <div className="card-title network-title">
-          <span>My Network</span>
+          <span>Network Scan</span>
           {scannedAt && (
             <span className="network-meta">last scan {scannedAt}</span>
           )}
