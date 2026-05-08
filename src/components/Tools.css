@@ -433,23 +433,129 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Mobile ── */
-@media (max-width: 768px) {
+/* ─────────────────────────────────────────────
+   TABLET (≤ 1024px)
+───────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .tools-sidebar {
+    width: 140px;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   MOBILE (≤ 767px)
+───────────────────────────────────────────── */
+
+@media (max-width: 767px) {
   .tools-page {
     flex-direction: column;
+    gap: 10px;
   }
+
   .tools-sidebar {
     width: 100%;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
   }
+  .tools-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
   .tools-sidebar-title {
     display: none;
   }
+
   .tools-nav-btn {
     width: auto;
+    flex-shrink: 0;
+    padding: 8px 14px;
+    white-space: nowrap;
+    font-size: 12.5px;
+    min-height: 38px;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
   }
+
+  .tools-nav-btn.active {
+    border-color: rgba(0, 212, 255, 0.35);
+  }
+
   .header-row {
     grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .header-name {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .tools-input-row {
+    gap: 8px;
+  }
+
+  .tools-run-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 18px;
+    min-height: 44px;
+  }
+
+  .tls-row {
+    grid-template-columns: 90px 1fr;
+  }
+
+  .cors-label {
+    width: 100px;
+  }
+
+  .tools-results {
+    min-height: 160px;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   SMALL MOBILE (≤ 480px)
+───────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .tools-nav-btn {
+    font-size: 12px;
+    padding: 7px 12px;
+  }
+
+  .dns-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .dns-type {
+    width: auto;
+    font-size: 10px;
+  }
+
+  .dns-val {
+    font-size: 11.5px;
+  }
+
+  .cors-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .cors-label {
+    width: auto;
+    font-size: 10.5px;
+    color: var(--text-muted);
+  }
+
+  .tool-raw {
+    font-size: 11px;
   }
 }

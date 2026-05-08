@@ -24,9 +24,9 @@ function SecurityIcon() {
   )
 }
 
-function GridIcon() {
+function GridIcon({ size = 13 }) {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="7" height="7" rx="1"/>
       <rect x="14" y="3" width="7" height="7" rx="1"/>
       <rect x="14" y="14" width="7" height="7" rx="1"/>
@@ -35,18 +35,18 @@ function GridIcon() {
   )
 }
 
-function TerminalIcon() {
+function TerminalIcon({ size = 13 }) {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="4 17 10 11 4 5"/>
       <line x1="12" y1="19" x2="20" y2="19"/>
     </svg>
   )
 }
 
-function NetworkIcon() {
+function NetworkIcon({ size = 13 }) {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="9"/>
       <path d="M3 12h18"/>
       <path d="M12 3a14 14 0 0 1 0 18"/>
@@ -55,17 +55,17 @@ function NetworkIcon() {
   )
 }
 
-function WrenchIcon() {
+function WrenchIcon({ size = 13 }) {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
     </svg>
   )
 }
 
-function SettingsIcon() {
+function SettingsIcon({ size = 13 }) {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3"/>
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>
@@ -95,6 +95,25 @@ function ChevronIcon({ open }) {
   )
 }
 
+function HamburgerIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  )
+}
+
 function StatusBadge({ label, status }) {
   const isUp   = status === 'up'
   const isDown = status === 'down'
@@ -106,12 +125,31 @@ function StatusBadge({ label, status }) {
   )
 }
 
+function StatusDot({ status }) {
+  const isUp   = status === 'up'
+  const isDown = status === 'down'
+  return (
+    <span className={`conn-dot ${isDown ? 'conn-dot-down' : !isUp ? 'conn-dot-checking' : ''}`} style={{ flexShrink: 0 }} />
+  )
+}
+
 function LogoutIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
       <polyline points="16 17 21 12 16 7"/>
       <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+  )
+}
+
+function DocsIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
     </svg>
   )
 }
@@ -121,21 +159,19 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [securityOpen, setSecurityOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const toolsRef = useRef(null)
-  const [apiStatus, setApiStatus] = useState('checking') // 'checking' | 'up' | 'down'
+  const [apiStatus, setApiStatus] = useState('checking')
   const [dbStatus,  setDbStatus]  = useState('checking')
   const securityRef = useRef(null)
   const settingsRef = useRef(null)
 
-  // "Scan →" buttons in the Network tab dispatch this event to jump to Requests
-  // pre-filled with the chosen target.
   useEffect(() => {
     function onRequestScan() { setActiveTab('requests') }
     window.addEventListener('vulnreview:request-scan', onRequestScan)
     return () => window.removeEventListener('vulnreview:request-scan', onRequestScan)
   }, [])
 
-  // Poll both services — drives the header badges
   useEffect(() => {
     function checkApi() {
       fetch('/pentester/health/api')
@@ -154,7 +190,6 @@ export default function App() {
     return () => clearInterval(id)
   }, [])
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     function onClickOutside(e) {
       if (securityRef.current && !securityRef.current.contains(e.target)) setSecurityOpen(false)
@@ -164,6 +199,23 @@ export default function App() {
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  // Lock body scroll when mobile drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [mobileMenuOpen])
+
+  function navigate(tab) {
+    setActiveTab(tab)
+    setMobileMenuOpen(false)
+    setSecurityOpen(false)
+    setSettingsOpen(false)
+  }
 
   if (loading) {
     return <div className="app-boot">Loading...</div>
@@ -175,6 +227,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* ── Desktop / Mobile Header ── */}
       <header className="header">
         <div className="brand">
           <div className="brand-icon">
@@ -188,10 +241,11 @@ export default function App() {
 
         <div className="header-sep" />
 
+        {/* Desktop nav */}
         <nav className="header-nav">
           <button
             className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => navigate('dashboard')}
           >
             <GridIcon />
             Dashboard
@@ -208,24 +262,15 @@ export default function App() {
             </button>
             {securityOpen && (
               <div className="nav-dropdown-menu">
-                <button
-                  className="nav-dropdown-item"
-                  onClick={() => { setActiveTab('requests'); setSecurityOpen(false) }}
-                >
+                <button className="nav-dropdown-item" onClick={() => navigate('requests')}>
                   <TerminalIcon />
                   Requests
                 </button>
-                <button
-                  className="nav-dropdown-item"
-                  onClick={() => { setActiveTab('network'); setSecurityOpen(false) }}
-                >
+                <button className="nav-dropdown-item" onClick={() => navigate('network')}>
                   <NetworkIcon />
                   Network Scan
                 </button>
-                <button
-                  className="nav-dropdown-item"
-                  onClick={() => { setActiveTab('tools'); setSecurityOpen(false) }}
-                >
+                <button className="nav-dropdown-item" onClick={() => navigate('tools')}>
                   <WrenchIcon />
                   Tools
                 </button>
@@ -245,10 +290,7 @@ export default function App() {
               </button>
               {settingsOpen && (
                 <div className="nav-dropdown-menu">
-                  <button
-                    className="nav-dropdown-item"
-                    onClick={() => { setActiveTab('settings'); setSettingsOpen(false) }}
-                  >
+                  <button className="nav-dropdown-item" onClick={() => navigate('settings')}>
                     <UsersIcon />
                     Manage Users
                   </button>
@@ -259,12 +301,7 @@ export default function App() {
                     rel="noreferrer"
                     onClick={() => setSettingsOpen(false)}
                   >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <line x1="16" y1="13" x2="8" y2="13"/>
-                      <line x1="16" y1="17" x2="8" y2="17"/>
-                    </svg>
+                    <DocsIcon />
                     Swagger Docs
                   </a>
                 </div>
@@ -273,6 +310,7 @@ export default function App() {
           )}
         </nav>
 
+        {/* Desktop right side */}
         <div className="header-right">
           <StatusBadge label="API" status={apiStatus} />
           <StatusBadge label="DB"  status={dbStatus} />
@@ -284,8 +322,100 @@ export default function App() {
             </button>
           </div>
         </div>
+
+        {/* Mobile right: compact status dots + hamburger */}
+        <div className="header-mobile-right">
+          <div className="mobile-status-dots">
+            <StatusDot status={apiStatus} />
+            <StatusDot status={dbStatus} />
+          </div>
+          <button
+            className="hamburger-btn"
+            onClick={() => setMobileMenuOpen(o => !o)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <XIcon /> : <HamburgerIcon />}
+          </button>
+        </div>
       </header>
 
+      {/* ── Mobile Overlay ── */}
+      {mobileMenuOpen && (
+        <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
+      {/* ── Mobile Drawer ── */}
+      <div className={`mobile-drawer ${mobileMenuOpen ? 'mobile-drawer-open' : ''}`}>
+        {/* Drawer header */}
+        <div className="mobile-drawer-header">
+          <div className="mobile-drawer-user">
+            <div className="mobile-drawer-avatar">
+              {user?.username?.[0]?.toUpperCase() ?? '?'}
+            </div>
+            <div>
+              <div className="mobile-drawer-username">{user?.username}</div>
+              {isAdmin && <div className="mobile-drawer-role">Administrator</div>}
+            </div>
+          </div>
+          <button className="mobile-drawer-close" onClick={() => setMobileMenuOpen(false)}>
+            <XIcon />
+          </button>
+        </div>
+
+        {/* Status */}
+        <div className="mobile-drawer-status">
+          <StatusBadge label="API" status={apiStatus} />
+          <StatusBadge label="DB"  status={dbStatus} />
+        </div>
+
+        {/* Nav items */}
+        <div className="mobile-drawer-section-label">Navigation</div>
+        <nav className="mobile-drawer-nav">
+          <button className={`mobile-drawer-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => navigate('dashboard')}>
+            <span className="mobile-drawer-item-icon"><GridIcon size={16} /></span>
+            Dashboard
+          </button>
+          <button className={`mobile-drawer-item ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => navigate('requests')}>
+            <span className="mobile-drawer-item-icon"><TerminalIcon size={16} /></span>
+            Requests
+          </button>
+          <button className={`mobile-drawer-item ${activeTab === 'network' ? 'active' : ''}`} onClick={() => navigate('network')}>
+            <span className="mobile-drawer-item-icon"><NetworkIcon size={16} /></span>
+            Network Scan
+          </button>
+          <button className={`mobile-drawer-item ${activeTab === 'tools' ? 'active' : ''}`} onClick={() => navigate('tools')}>
+            <span className="mobile-drawer-item-icon"><WrenchIcon size={16} /></span>
+            Tools
+          </button>
+          {isAdmin && (
+            <button className={`mobile-drawer-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => navigate('settings')}>
+              <span className="mobile-drawer-item-icon"><UsersIcon /></span>
+              Manage Users
+            </button>
+          )}
+          {isAdmin && (
+            <a
+              className="mobile-drawer-item"
+              href={`http://${window.location.hostname}:8000/docs`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <span className="mobile-drawer-item-icon"><DocsIcon /></span>
+              Swagger Docs
+            </a>
+          )}
+        </nav>
+
+        <div className="mobile-drawer-footer">
+          <button className="mobile-drawer-logout" onClick={() => { logout(); setMobileMenuOpen(false) }}>
+            <LogoutIcon />
+            Sign out
+          </button>
+        </div>
+      </div>
+
+      {/* ── Main Content ── */}
       <main className="main-content">
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'requests'  && <Requests />}
@@ -293,6 +423,47 @@ export default function App() {
         {activeTab === 'tools'     && <Tools />}
         {activeTab === 'settings'  && isAdmin && <Settings />}
       </main>
+
+      {/* ── Mobile Bottom Navigation ── */}
+      <nav className="mobile-bottom-nav">
+        <button
+          className={`mobile-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => navigate('dashboard')}
+        >
+          <GridIcon size={20} />
+          <span>Dashboard</span>
+        </button>
+        <button
+          className={`mobile-tab-btn ${activeTab === 'requests' ? 'active' : ''}`}
+          onClick={() => navigate('requests')}
+        >
+          <TerminalIcon size={20} />
+          <span>Requests</span>
+        </button>
+        <button
+          className={`mobile-tab-btn ${activeTab === 'network' ? 'active' : ''}`}
+          onClick={() => navigate('network')}
+        >
+          <NetworkIcon size={20} />
+          <span>Network</span>
+        </button>
+        <button
+          className={`mobile-tab-btn ${activeTab === 'tools' ? 'active' : ''}`}
+          onClick={() => navigate('tools')}
+        >
+          <WrenchIcon size={20} />
+          <span>Tools</span>
+        </button>
+        {isAdmin && (
+          <button
+            className={`mobile-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+            onClick={() => navigate('settings')}
+          >
+            <SettingsIcon size={20} />
+            <span>Settings</span>
+          </button>
+        )}
+      </nav>
     </div>
   )
 }

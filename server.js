@@ -281,6 +281,25 @@ app.patch('/api/admin/users/:id/role', adminOnly, async (req, res) => {
   }
 })
 
+app.patch('/api/admin/users/:id/password', adminOnly, async (req, res) => {
+  const { password } = req.body || {}
+  if (typeof password !== 'string' || password.length < 8) {
+    return res.status(400).json({ error: 'password must be at least 8 chars' })
+  }
+  if (password.length > 200) return res.status(400).json({ error: 'password too long' })
+  try {
+    const hash = await bcrypt.hash(password, BCRYPT_COST)
+    const { rowCount } = await pool.query(
+      'UPDATE users SET password_hash = $1 WHERE id = $2',
+      [hash, req.params.id]
+    )
+    if (rowCount === 0) return res.status(404).json({ error: 'user not found' })
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.delete('/api/admin/users/:id', adminOnly, async (req, res) => {
   if (Number(req.params.id) === req.user.sub) {
     return res.status(400).json({ error: 'cannot delete your own account' })

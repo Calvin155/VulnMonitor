@@ -601,7 +601,7 @@
 }
 
 /* ─────────────────────────────────────────────
-   MOBILE OVERRIDES
+   TABLET (≤ 1024px)
 ───────────────────────────────────────────── */
 
 @media (max-width: 1024px) {
@@ -615,32 +615,153 @@
   }
 
   .chart-body {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
   }
 
   .donut-svg {
-    width: 110px;
-    height: 110px;
+    width: 120px;
+    height: 120px;
   }
 }
 
-@media (max-width: 768px) {
+/* ─────────────────────────────────────────────
+   MOBILE (≤ 767px)
+───────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+
+  .dashboard-page-title {
+    font-size: 17px;
+  }
 
   .stats-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+
+  .stat-label {
+    font-size: 9.5px;
   }
 
   .stat-value {
     font-size: 22px;
+    margin-bottom: 6px;
   }
 
   .stat-total .stat-value {
     font-size: 24px;
   }
 
+  .stat-sub {
+    font-size: 9.5px;
+  }
+
   .mid-row {
     grid-template-columns: 1fr;
+  }
+
+  .chart-body {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .donut-svg {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+  }
+
+  .chart-legend {
+    gap: 6px;
+  }
+
+  .legend-row {
+    padding: 8px 10px;
+  }
+
+  .legend-label {
+    font-size: 11px;
+  }
+
+  .activity-row {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .activity-event {
+    font-size: 12.5px;
+  }
+
+  .activity-time {
+    font-size: 9.5px;
+  }
+
+  .findings-toolbar {
+    gap: 8px;
+  }
+
+  .findings-search {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  /* Stack findings table header so it's easier to read */
+  .findings-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   SMALL MOBILE (≤ 480px)
+───────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* Make total stat span full width */
+  .stats-row .stat-total {
+    grid-column: 1 / -1;
+  }
+
+  .stat-card {
+    padding: 10px 12px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-total .stat-value {
+    font-size: 22px;
+  }
+
+  .chart-body {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .donut-svg {
+    width: 90px;
+    height: 90px;
+  }
+
+  .chart-legend {
+    width: 100%;
   }
 
   .activity-row {
@@ -649,35 +770,11 @@
     gap: 6px;
   }
 
-  .activity-time {
-    align-self: flex-end;
-  }
-
-  .findings-search {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-
-  .stats-row {
-    grid-template-columns: 1fr;
-  }
-
-  .stat-card {
-    padding: 12px;
-  }
-
-  .stat-value {
-    font-size: 20px;
-  }
-
-  .donut-svg {
-    width: 90px;
-    height: 90px;
-  }
-
   .activity-line {
     height: 24px;
+  }
+
+  .activity-time {
+    align-self: flex-end;
   }
 }

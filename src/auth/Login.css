@@ -168,25 +168,92 @@
 }
 
 /* ─────────────────────────────
-   MOBILE OVERRIDES
+   TABLET (≤ 1024px)
 ───────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
+  .login-card {
+    max-width: 400px;
+  }
+}
+
+/* ─────────────────────────────
+   MOBILE (≤ 767px)
+───────────────────────────── */
+@media (max-width: 767px) {
 
   .login-shell {
-    padding: 16px;
+    padding: 20px 16px;
     align-items: center;
+    /* Vibrant gradient on mobile to make it feel premium */
+    background:
+      radial-gradient(ellipse at top left, rgba(0,212,255,0.08), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(168,85,247,0.06), transparent 50%),
+      var(--bg-base);
   }
 
   .login-card {
     max-width: 100%;
-    padding: 20px;
-    gap: 12px;
-    border-radius: 14px;
+    padding: 24px 20px;
+    gap: 14px;
+    border-radius: 16px;
+    /* Slightly stronger glass effect on mobile */
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.04);
   }
 
   .login-brand-icon {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .login-brand-name {
+    font-size: 12.5px;
+  }
+
+  .login-title {
+    font-size: 17px;
+  }
+
+  .login-subtitle {
+    font-size: 12px;
+  }
+
+  .login-input {
+    font-size: 16px; /* Prevent iOS zoom */
+    padding: 11px 13px;
+    min-height: 48px;
+    border-radius: var(--radius-md);
+  }
+
+  .login-btn {
+    font-size: 14px;
+    padding: 13px 14px;
+    min-height: 48px;
+    letter-spacing: 0.03em;
+  }
+
+  .login-error {
+    font-size: 12px;
+    padding: 9px 12px;
+  }
+
+  .login-label {
+    font-size: 10px;
+  }
+}
+
+/* ─────────────────────────────
+   SMALL MOBILE (≤ 480px)
+───────────────────────────── */
+@media (max-width: 480px) {
+  .login-shell {
+    padding: 16px 12px;
+  }
+
+  .login-card {
+    padding: 20px 16px;
+    gap: 12px;
+    border-radius: 14px;
   }
 
   .login-title {
@@ -198,17 +265,13 @@
   }
 
   .login-input {
-    font-size: 12.5px;
-    padding: 8px 10px;
+    font-size: 16px; /* Keep at 16px to prevent iOS zoom */
+    padding: 10px 12px;
+    min-height: 46px;
   }
 
   .login-btn {
-    font-size: 12.5px;
-    padding: 10px 12px;
-  }
-
-  .login-error {
-    font-size: 11.5px;
-    padding: 7px 10px;
+    font-size: 13.5px;
+    min-height: 46px;
   }
 }
