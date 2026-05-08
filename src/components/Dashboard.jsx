@@ -150,6 +150,16 @@ export default function Dashboard() {
   const [expandedRow, setExpandedRow]   = useState(null)
   const [selectedScan, setSelectedScan] = useState(null)
   const [loadingScan, setLoadingScan]   = useState(false)
+  const [deletedIds, setDeletedIds]     = useState(() => new Set())
+
+  // Listen for deletes that originate inside ScanDetail (from any page)
+  useEffect(() => {
+    function onDeleted(e) {
+      setDeletedIds(prev => new Set([...prev, e.detail.id]))
+    }
+    window.addEventListener('vulnreview:scan-deleted', onDeleted)
+    return () => window.removeEventListener('vulnreview:scan-deleted', onDeleted)
+  }, [])
   // Local override layer so status changes from the inline pills reflect instantly
   // without re-fetching `/api/vulnerabilities`. Keyed by `${scan_id}:${idx}`.
   const [statusOverrides, setStatusOverrides] = useState({})
@@ -311,7 +321,7 @@ export default function Dashboard() {
             {!scansLoading && Array.isArray(scans) && scans.length === 0 && (
               <div className="empty-msg">No scans yet.</div>
             )}
-            {Array.isArray(scans) && scans.map(scan => {
+            {Array.isArray(scans) && scans.filter(s => !deletedIds.has(s.id)).map(scan => {
               const count = Number(scan.vuln_count)
               const topSev = scan.vulnerabilities?.reduce((top, v) => {
                 const order = SEV_ORDER.indexOf(normalize(v.severity))
@@ -517,7 +527,14 @@ export default function Dashboard() {
         </div>
       )}
       {selectedScan && (
-        <ScanDetailModal scan={selectedScan} onClose={() => setSelectedScan(null)} />
+        <ScanDetailModal
+          scan={selectedScan}
+          onClose={() => setSelectedScan(null)}
+          onDelete={id => {
+            setDeletedIds(prev => new Set([...prev, id]))
+            setSelectedScan(null)
+          }}
+        />
       )}
 
     </div>

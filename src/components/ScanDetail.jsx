@@ -146,8 +146,8 @@ function ProbeResult({ probe }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
-  const { apiFetch } = useAuth()
+export default function ScanDetail({ scan, onClose, onDelete, variant = 'panel' }) {
+  const { apiFetch, isAdmin } = useAuth()
   const [tab, setTab]               = useState('findings')
   const [expanded, setExpanded]     = useState(new Set())
   const [search, setSearch]         = useState('')
@@ -177,6 +177,27 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
     if (!raw) return null
     return typeof raw === 'object' ? raw : parsePyDict(raw)
   }, [scan.scan_options])
+
+  const attackChains = useMemo(() => {
+    const raw = scan.attack_chains
+    if (!raw) return null
+    if (Array.isArray(raw) && raw.length > 0) return raw
+    const parsed = parsePyDict(raw)
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null
+  }, [scan.attack_chains])
+
+  async function deleteScan() {
+    if (!window.confirm(`Delete scan #${scan.id} for ${scan.domain}?\nThis cannot be undone.`)) return
+    try {
+      const res = await apiFetch(`/api/scans/${scan.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      window.dispatchEvent(new CustomEvent('vulnreview:scan-deleted', { detail: { id: scan.id } }))
+      onDelete?.(scan.id)
+      onClose()
+    } catch (err) {
+      alert(`Delete failed: ${err.message}`)
+    }
+  }
 
   const [vulns, setVulns] = useState(() =>
     [...(scan.vulnerabilities ?? [])]
@@ -285,9 +306,11 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
           </div>
           {scanOpts && (
             <div className="detail-scan-opts">
-              {scanOpts.wordlist && <span className="scan-opt-pill">{scanOpts.wordlist}</span>}
-              {scanOpts.model   && <span className="scan-opt-pill">{scanOpts.model}</span>}
-              {scanOpts.exploit && <span className="scan-opt-pill scan-opt-exploit">exploit mode</span>}
+              {scanOpts.wordlist        && <span className="scan-opt-pill">{scanOpts.wordlist}</span>}
+              {scanOpts.model           && <span className="scan-opt-pill">{scanOpts.model}</span>}
+              {scanOpts.engagement_ref  && <span className="scan-opt-pill">ref: {scanOpts.engagement_ref}</span>}
+              {scanOpts.fast            && <span className="scan-opt-pill">fast mode</span>}
+              {scanOpts.exploit         && <span className="scan-opt-pill scan-opt-exploit">exploit mode</span>}
             </div>
           )}
         </div>
@@ -296,6 +319,9 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
             <>
               <a className="export-btn" href={`/pentester/scans/${scan.id}/export?format=csv`} download title="Download findings as CSV">CSV</a>
               <a className="export-btn" href={`/pentester/scans/${scan.id}/export?format=markdown`} download title="Download full report">Report ↓</a>
+              {isAdmin && (
+                <button className="delete-scan-btn" onClick={deleteScan} title="Permanently delete this scan">Delete</button>
+              )}
             </>
           )}
           <button className="detail-close" onClick={onClose} title="Close (Esc)">&#x2715;</button>
@@ -322,6 +348,11 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
         )}
         {msfData && (
           <button className={`detail-tab${tab === 'msf' ? ' active' : ''}`} onClick={() => setTab('msf')}>MSF</button>
+        )}
+        {attackChains && (
+          <button className={`detail-tab${tab === 'chains' ? ' active' : ''}`} onClick={() => setTab('chains')}>
+            Chains <span className="detail-tab-count">{attackChains.length}</span>
+          </button>
         )}
         <button className={`detail-tab${tab === 'report' ? ' active' : ''}`} onClick={() => setTab('report')}>Report</button>
       </div>
@@ -446,7 +477,25 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
               ))}
             </div>
           )}
-          {!scan.recon && (!scan.raw_recon || Object.keys(scan.raw_recon ?? {}).length === 0) && (
+          {scan.raw_scan && typeof scan.raw_scan === 'object' && Object.keys(scan.raw_scan).length > 0 && (
+            <div className="recon-raw-section">
+              <div className="recon-summary-label">Scan Checks</div>
+              {Object.entries(scan.raw_scan).map(([name, output]) => (
+                <ReconCheck key={name} name={name} output={output} />
+              ))}
+            </div>
+          )}
+          {scan.raw_webapp && typeof scan.raw_webapp === 'object' && Object.keys(scan.raw_webapp).length > 0 && (
+            <div className="recon-raw-section">
+              <div className="recon-summary-label">Web App Checks</div>
+              {Object.entries(scan.raw_webapp).map(([name, output]) => (
+                <ReconCheck key={name} name={name} output={output} />
+              ))}
+            </div>
+          )}
+          {!scan.recon && (!scan.raw_recon || Object.keys(scan.raw_recon ?? {}).length === 0) &&
+           (!scan.raw_scan || Object.keys(scan.raw_scan ?? {}).length === 0) &&
+           (!scan.raw_webapp || Object.keys(scan.raw_webapp ?? {}).length === 0) && (
             <div className="detail-empty">No recon data available.</div>
           )}
         </div>
@@ -539,6 +588,52 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
         </div>
       )}
 
+      {/* ── Attack Chains ── */}
+      {tab === 'chains' && (
+        <div className="detail-chains">
+          {(!attackChains || attackChains.length === 0) ? (
+            <div className="detail-empty">No attack chains available.</div>
+          ) : attackChains.map((chain, i) => {
+            const steps = Array.isArray(chain.steps) ? chain.steps : null
+            const hasKnownFields = chain.description || steps || chain.impact
+            return (
+              <div key={i} className="chain-card">
+                <div className="chain-header">
+                  <span className="chain-title">{chain.title ?? chain.name ?? `Chain ${i + 1}`}</span>
+                  {chain.severity && (
+                    <span className={`badge badge-${(chain.severity ?? '').toLowerCase()}`}>{chain.severity}</span>
+                  )}
+                </div>
+                {chain.description && <p className="chain-desc">{chain.description}</p>}
+                {steps && (
+                  <div className="chain-steps">
+                    {steps.map((step, j) => (
+                      <div key={j} className="chain-step">
+                        <span className="step-num">{j + 1}</span>
+                        <span className="step-text">
+                          {typeof step === 'string' ? step : (step.action ?? step.description ?? step.step ?? JSON.stringify(step))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {chain.impact && (
+                  <p className="chain-meta"><strong>Impact:</strong> {chain.impact}</p>
+                )}
+                {chain.prerequisites && (
+                  <p className="chain-meta"><strong>Prerequisites:</strong>{' '}
+                    {Array.isArray(chain.prerequisites) ? chain.prerequisites.join(', ') : chain.prerequisites}
+                  </p>
+                )}
+                {!hasKnownFields && (
+                  <pre className="chain-raw">{JSON.stringify(chain, null, 2)}</pre>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {/* ── Report ── */}
       {tab === 'report' && (
         <div className="detail-report">
@@ -552,7 +647,7 @@ export default function ScanDetail({ scan, onClose, variant = 'panel' }) {
   )
 }
 
-export function ScanDetailModal({ scan, onClose }) {
+export function ScanDetailModal({ scan, onClose, onDelete }) {
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -562,7 +657,7 @@ export function ScanDetailModal({ scan, onClose }) {
   return (
     <div className="scan-modal-overlay" onClick={onClose}>
       <div className="scan-modal-shell" onClick={e => e.stopPropagation()}>
-        <ScanDetail scan={scan} onClose={onClose} variant="modal" />
+        <ScanDetail scan={scan} onClose={onClose} onDelete={onDelete} variant="modal" />
       </div>
     </div>
   )

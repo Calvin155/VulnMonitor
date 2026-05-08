@@ -13,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const PYTHON_BIN = '/home/calvin/.cache/pypoetry/virtualenvs/ai-pentester-s7lfeKjm-py3.12/bin/python3'
 const RUNNER_SCRIPT = path.join(__dirname, 'scripts', 'pentest_runner.py')
-const AI_PROJECT_DIR = '/home/calvin/Projects/AI Project'
+const AI_PROJECT_DIR = '/home/calvin/Projects/PentestProject/AIPentester'
 
 const BCRYPT_COST = 12
 const JWT_EXPIRES_IN = '24h'
@@ -34,7 +34,7 @@ const pool = new Pool({
   port:     Number(process.env.PGPORT) || 5432,
   database: process.env.PGDATABASE || 'pentester',
   user:     process.env.PGUSER     || 'pentester',
-  password: process.env.PGPASSWORD || 'Munster2021',
+  password: process.env.PGPASSWORD || 'changeme',
 })
 
 // Bootstrap users table (idempotent)
@@ -64,6 +64,34 @@ initSchema().catch(err => {
 const app = express()
 app.use(cors())
 app.use(express.json())
+
+// ── Health / readiness (no auth) ──────────────────────────────────────────
+
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+app.get('/health/api', (_req, res) => {
+  res.json({ online: true })
+})
+
+app.get('/health/db', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1')
+    res.json({ online: true })
+  } catch {
+    res.json({ online: false })
+  }
+})
+
+app.get('/ready', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1')
+    res.json({ status: 'ready' })
+  } catch (err) {
+    res.status(503).json({ status: 'not ready', error: err.message })
+  }
+})
 
 // ── Auth helpers ─────────────────────────────────────────────────────────
 
@@ -301,20 +329,49 @@ app.get('/api/stats', async (req, res) => {
   }
 })
 
-// All scans (list view)
+// All scans — supports ?domain=, ?limit=, ?offset=
 app.get('/api/scans', async (req, res) => {
   try {
+    const { domain } = req.query
+    const limit  = Math.min(Math.max(Number(req.query.limit)  || 100, 1), 500)
+    const offset = Math.max(Number(req.query.offset) || 0, 0)
+    const params = domain ? [domain, limit, offset] : [limit, offset]
+    const where  = domain ? 'WHERE domain = $1' : ''
+    const [li, oi] = domain ? [2, 3] : [1, 2]
     const { rows } = await pool.query(`
       SELECT
-        id,
-        domain,
-        scanned_at,
-        scan_summary,
+        id, domain, target_ip, scanned_at, completed_at, status,
+        scan_duration_seconds, scan_summary, scan_options,
         jsonb_array_length(vulnerabilities) AS vuln_count,
         vulnerabilities
-      FROM scans
+      FROM scans ${where}
       ORDER BY scanned_at DESC
-    `)
+      LIMIT $${li} OFFSET $${oi}
+    `, params)
+    res.json(rows)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Check names by category (static reference)
+app.get('/api/checks', (_req, res) => {
+  res.json({
+    recon:  ['dns', 'whois', 'headers', 'tls', 'port_scan', 'subdomains', 'cors'],
+    scan:   ['vuln_scan', 'directory_enum', 'web_scan'],
+    webapp: ['sql_injection', 'xss', 'auth_test', 'csrf'],
+  })
+})
+
+// All scans for a specific domain
+app.get('/api/scans/by-domain/:domain', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT id, domain, target_ip, scanned_at, completed_at, status,
+             scan_duration_seconds, scan_options,
+             jsonb_array_length(vulnerabilities) AS vuln_count
+      FROM scans WHERE domain = $1 ORDER BY scanned_at DESC
+    `, [req.params.domain])
     res.json(rows)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -330,6 +387,62 @@ app.get('/api/scans/:id', async (req, res) => {
     )
     if (!rows[0]) return res.status(404).json({ error: 'Not found' })
     res.json(rows[0])
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Lightweight status poll
+app.get('/api/scans/:id/status', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, status, scanned_at, completed_at, error, scan_duration_seconds FROM scans WHERE id = $1',
+      [req.params.id]
+    )
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' })
+    res.json(rows[0])
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Vuln diff between two scans (added / removed / persisted by name)
+app.get('/api/scans/:id/diff/:baselineId', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, domain, scanned_at, vulnerabilities FROM scans WHERE id = ANY($1::int[])',
+      [[req.params.id, req.params.baselineId]]
+    )
+    const current  = rows.find(r => String(r.id) === String(req.params.id))
+    const baseline = rows.find(r => String(r.id) === String(req.params.baselineId))
+    if (!current || !baseline) return res.status(404).json({ error: 'One or both scans not found' })
+    const curNames  = new Set((current.vulnerabilities  ?? []).map(v => v.name))
+    const baseNames = new Set((baseline.vulnerabilities ?? []).map(v => v.name))
+    res.json({
+      scan:      { id: current.id,  domain: current.domain,  scanned_at: current.scanned_at },
+      baseline:  { id: baseline.id, domain: baseline.domain, scanned_at: baseline.scanned_at },
+      added:     (current.vulnerabilities  ?? []).filter(v => !baseNames.has(v.name)),
+      removed:   (baseline.vulnerabilities ?? []).filter(v => !curNames.has(v.name)),
+      persisted: (current.vulnerabilities  ?? []).filter(v =>  baseNames.has(v.name)),
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Single check result — searches raw_recon, raw_scan, raw_webapp in order
+app.get('/api/scans/:id/checks/:checkName', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT raw_recon, raw_scan, raw_webapp FROM scans WHERE id = $1',
+      [req.params.id]
+    )
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' })
+    const { raw_recon, raw_scan, raw_webapp } = rows[0]
+    const name   = req.params.checkName
+    const result = raw_recon?.[name] ?? raw_scan?.[name] ?? raw_webapp?.[name] ?? null
+    if (result === null) return res.status(404).json({ error: 'Check not found' })
+    res.json({ check: name, result })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
@@ -384,6 +497,17 @@ app.patch('/api/scans/:id/vuln/:idx', async (req, res) => {
       )
       WHERE id = $1
     `, [req.params.id, req.params.idx, status])
+    if (rowCount === 0) return res.status(404).json({ error: 'Not found' })
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Delete a scan (admin only)
+app.delete('/api/scans/:id', adminOnly, async (req, res) => {
+  try {
+    const { rowCount } = await pool.query('DELETE FROM scans WHERE id = $1', [req.params.id])
     if (rowCount === 0) return res.status(404).json({ error: 'Not found' })
     res.json({ ok: true })
   } catch (err) {

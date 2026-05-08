@@ -72,7 +72,8 @@ function adaptScanForDetail(scan) {
     msf:                  scan.msf ?? null,
     recon:                scan.recon ?? null,
     raw_recon:            scan.raw_recon ?? null,
-    scan_options:         scan.scan_options ?? null,
+    scan_options:         scan.scan_options  ?? null,
+    attack_chains:        scan.attack_chains ?? null,
   }
 }
 
@@ -491,7 +492,14 @@ export default function Requests() {
             <Spinner /> Loading scan...
           </div>
         ) : selectedScan ? (
-          <ScanDetail scan={selectedScan} onClose={() => setSelectedScan(null)} />
+          <ScanDetail
+            scan={selectedScan}
+            onClose={() => setSelectedScan(null)}
+            onDelete={id => {
+              setScans(prev => prev.filter(s => s.id !== id))
+              setSelectedScan(null)
+            }}
+          />
         ) : (
           <div className="card terminal-card">
             <div className="card-title">

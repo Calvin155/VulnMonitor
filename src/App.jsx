@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import Dashboard from './components/Dashboard'
 import Requests from './components/Requests'
 import Network from './components/Network'
+import Tools from './components/Tools'
 import Settings from './components/Settings'
 import Login from './auth/Login'
 import { useAuth } from './auth/AuthContext'
@@ -50,6 +51,14 @@ function NetworkIcon() {
       <path d="M3 12h18"/>
       <path d="M12 3a14 14 0 0 1 0 18"/>
       <path d="M12 3a14 14 0 0 0 0 18"/>
+    </svg>
+  )
+}
+
+function WrenchIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
     </svg>
   )
 }
@@ -112,6 +121,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [securityOpen, setSecurityOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const toolsRef = useRef(null)
   const [apiStatus, setApiStatus] = useState('checking') // 'checking' | 'up' | 'down'
   const [dbStatus,  setDbStatus]  = useState('checking')
   const securityRef = useRef(null)
@@ -149,6 +159,7 @@ export default function App() {
     function onClickOutside(e) {
       if (securityRef.current && !securityRef.current.contains(e.target)) setSecurityOpen(false)
       if (settingsRef.current && !settingsRef.current.contains(e.target)) setSettingsOpen(false)
+      if (toolsRef.current    && !toolsRef.current.contains(e.target))    setSecurityOpen(false)
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
@@ -188,7 +199,7 @@ export default function App() {
 
           <div className="nav-dropdown" ref={securityRef}>
             <button
-              className={`nav-btn nav-btn-dropdown ${['requests','network'].includes(activeTab) ? 'active' : ''}`}
+              className={`nav-btn nav-btn-dropdown ${['requests','network','tools'].includes(activeTab) ? 'active' : ''}`}
               onClick={() => setSecurityOpen(o => !o)}
             >
               <SecurityIcon />
@@ -210,6 +221,13 @@ export default function App() {
                 >
                   <NetworkIcon />
                   Network Scan
+                </button>
+                <button
+                  className="nav-dropdown-item"
+                  onClick={() => { setActiveTab('tools'); setSecurityOpen(false) }}
+                >
+                  <WrenchIcon />
+                  Tools
                 </button>
               </div>
             )}
@@ -272,6 +290,7 @@ export default function App() {
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'requests'  && <Requests />}
         {activeTab === 'network'   && <Network />}
+        {activeTab === 'tools'     && <Tools />}
         {activeTab === 'settings'  && isAdmin && <Settings />}
       </main>
     </div>
