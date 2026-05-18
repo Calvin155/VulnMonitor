@@ -52,10 +52,14 @@ Access via:
 ```
 [ Dashboard ]  [ Security ▾ ]  [ Settings ▾ (admin only) ]
                   Requests         Manage Users
-                  My Network       Swagger Docs
+                  Network Scan     Swagger Docs (admin only)
+                  Tools
 ```
 
-- **Dashboard** — stat cards, severity donut, findings table, recent scans, live API health
+Mobile bottom nav: Dashboard · Requests · Network · Tools · Settings (admin only)
+
+- **Dashboard** — stat cards, severity donut, findings table, recent scans; API + DB health badges polled every 30s
 - **Requests** — submit scans, poll live status, history
-- **My Network** — active nmap ping-sweep + passive tshark listener (mDNS/DHCP)
-- **Settings** — user management (admin only), API links
+- **Network Scan** — active nmap ping-sweep + passive tshark listener (mDNS/DHCP)
+- **Tools** — 7 on-demand recon tools: DNS Lookup, WHOIS, HTTP Headers, TLS/Cert, Subdomains, CORS, Port Check
+- **Settings** — user management (admin only), Swagger Docs link (admin only)

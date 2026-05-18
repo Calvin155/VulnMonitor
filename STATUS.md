@@ -1,12 +1,12 @@
 # VulnReview — Project Status
 
-Last updated: 2026-05-09
+Last updated: 2026-05-18
 
 ## What This Is
 
-AI-assisted pentest monitoring dashboard. Four nav areas:
+AI-assisted pentest monitoring dashboard. Five nav areas:
 - **Dashboard** (default landing) — welcome header, live API health, stat cards, severity donut, findings table, recent scans. All live from DB.
-- **Security dropdown** — Requests (submit & track scans) + My Network (active ping-sweep + passive tshark listener)
+- **Security dropdown** — Requests (submit & track scans) + Network Scan (active ping-sweep + passive tshark listener) + **Tools** (7 on-demand security tools)
 - **Settings dropdown** (admin only) — Manage Users + Swagger Docs link
 
 The whole SPA is gated behind a JWT login layer with role-based access (admin / user).
@@ -120,6 +120,7 @@ JWT: HS256, secret from `JWT_SECRET` env (dev fallback warns), 24h expiry, paylo
 | GET | `/api/admin/users` | List all users |
 | POST | `/api/admin/users` | Create user with chosen role |
 | PATCH | `/api/admin/users/:id/role` | Change a user's role (cannot change own) |
+| PATCH | `/api/admin/users/:id/password` | Reset a user's password (min 8 chars) |
 | DELETE | `/api/admin/users/:id` | Delete a user (cannot delete self) |
 
 ### Pentester container (FastAPI, proxied as `/pentester/*`, not gated by Express)
@@ -130,9 +131,17 @@ JWT: HS256, secret from `JWT_SECRET` env (dev fallback warns), 24h expiry, paylo
 | GET | `/pentester/scans?limit=50` | Requests tab — scan history list |
 | GET | `/pentester/scans/{id}/status` | Requests tab — polled every 2s during a run |
 | GET | `/pentester/scans/{id}` | Requests tab — drill-down |
-| GET | `/pentester/network/scan?cidr=...` | My Network tab — `nmap -sn` ping-sweep |
-| GET | `/pentester/network/passive?duration=&interface=` | My Network tab — passive mDNS + DHCP sniff via tshark |
-| GET | `/pentester/health` | Dashboard — live health card (polled every 30s) |
+| GET | `/pentester/network/scan?cidr=...` | Network Scan tab — `nmap -sn` ping-sweep |
+| GET | `/pentester/network/passive?duration=&interface=` | Network Scan tab — passive mDNS + DHCP sniff via tshark |
+| GET | `/pentester/health/api` | Header — API online check (polled every 30s) |
+| GET | `/pentester/health/db` | Header — DB online check (polled every 30s) |
+| GET | `/pentester/tools/dns/{domain}` | Tools tab — DNS lookup |
+| GET | `/pentester/tools/whois/{domain}` | Tools tab — WHOIS |
+| GET | `/pentester/tools/headers/{domain}` | Tools tab — HTTP security headers |
+| GET | `/pentester/tools/tls/{domain}` | Tools tab — TLS/cert inspection |
+| GET | `/pentester/tools/subdomains/{domain}` | Tools tab — subdomain enumeration |
+| GET | `/pentester/tools/cors/{domain}` | Tools tab — CORS policy check |
+| GET | `/pentester/tools/port/{host}/{port}` | Tools tab — single port probe (`{host, port, open}`) |
 
 ---
 
@@ -141,15 +150,27 @@ JWT: HS256, secret from `JWT_SECRET` env (dev fallback warns), 24h expiry, paylo
 ```
 [ Dashboard ]  [ Security ▾ ]  [ Settings ▾ (admin only) ]
                   Requests         Manage Users
-                  My Network       Swagger Docs → :8000/docs
+                  Network Scan     Swagger Docs → :8000/docs  (admin only)
+                  Tools
 ```
 
+Mobile bottom nav bar: **Dashboard · Requests · Network · Tools · Settings** (Settings visible to admin only)
+
 **Dashboard** is the default landing page and shows:
-- Welcome header ("Welcome back, {username}") + live Pentester API health card
+- Welcome header ("Welcome back, {username}") + live API/DB health status badges (polls `/pentester/health/api` and `/pentester/health/db` every 30s)
 - Stat cards (total scans, total findings, critical, high, medium, low, info)
 - Severity donut chart (clickable — filters findings table)
 - Recent scans list (clickable — opens drill-down modal)
 - Full findings table (sortable, searchable, expandable rows, status pills)
+
+**Tools** panel (under Security dropdown) provides 7 on-demand recon tools — sidebar navigation, input field, Run button, structured results:
+- **DNS Lookup** — A, AAAA, MX, NS, TXT, CNAME, SOA records displayed as type+values rows
+- **WHOIS** — registrar, org, country, created/expires/updated dates as labeled rows; nameservers and status flags as pill badges
+- **HTTP Headers** — grade, all present headers, list of missing security headers (CSP, HSTS, X-Frame-Options, etc.)
+- **TLS / Cert** — protocol version, cipher, subject, issuer, expiry, SANs, self-signed flag
+- **Subdomains** — count badge + pill-badge list of discovered subdomains
+- **CORS** — Allow-Origin, Allow-Methods, detected issues highlighted in red
+- **Port Check** — open/closed status with colour (green/red); returns `{host, port, open}`
 
 **Swagger Docs** and API link URLs use `window.location.hostname` so they resolve correctly whether accessed from the Pi directly or from another device on the LAN.
 
@@ -174,18 +195,20 @@ JWT: HS256, secret from `JWT_SECRET` env (dev fallback warns), 24h expiry, paylo
 - [x] Dashboard interactivity — clickable severity filters, sortable columns, search, expandable rows, scan drill-down modal
 - [x] Reusable `ScanDetail` component with search, severity filtering, expand/collapse-all
 - [x] Requests tab — POST `/pentester/scans`, polls status every 2s, cancel button, history list
-- [x] My Network tab — active nmap ping-sweep, sortable host table, copy-IP, Scan → hand-off to Requests
-- [x] My Network passive tab — tshark mDNS + DHCP listener; duration + interface controls; live countdown + progress bar; hostname/MAC results table; Scan → hand-off
+- [x] Network Scan tab — active nmap ping-sweep, sortable host table, copy-IP, Scan → hand-off to Requests
+- [x] Network Scan passive tab — tshark mDNS + DHCP listener; duration + interface controls; live countdown + progress bar; hostname/MAC results table; Scan → hand-off
+- [x] **Tools tab** — 7 on-demand security tools (DNS, WHOIS, HTTP Headers, TLS/Cert, Subdomains, CORS, Port Check); sidebar navigation; structured result renderers for each tool type; WHOIS nameserver/status pill badges; port open/closed colour states; responsive mobile layout
 - [x] JWT login layer — bcryptjs (cost 12), 24h tokens, Bearer middleware on all `/api/*` routes
 - [x] Role-based access — `admin` / `user` roles in DB + JWT, `adminOnly` middleware, `isAdmin` in frontend
 - [x] First-run setup flow — Login flips to register mode when users table is empty
 - [x] Sign-up page — open registration toggle on Login page; new users get `user` role
 - [x] Settings tab (admin only) — Manage Users table (list, add, change role, delete) + API Links section
 - [x] Settings dropdown — Manage Users (in-app) + Swagger Docs (external link, hostname-aware)
-- [x] Security dropdown — Requests + My Network grouped under Security nav item
-- [x] Live health card on Dashboard — polls `/pentester/health` every 30s, green/red pulse indicator
+- [x] Security dropdown — Requests + Network Scan grouped under Security nav item
+- [x] Live health badges on Dashboard — polls `/pentester/health/api` and `/pentester/health/db` every 30s; separate API and DB status indicators in header
+- [x] Mobile bottom nav bar — Dashboard, Requests, Network, Tools, Settings (admin only); slide-out drawer with user avatar, status badges, and sign-out
 - [x] `npm start` — `concurrently` runs Express + Vite in one terminal
-- [x] Auto port/TLS — Vite uses port 443 + HTTPS when certs present (Pi), port 5173 + HTTP otherwise (local)
+- [x] Auto HTTPS — Express reads `TLS_CERT` + `TLS_KEY` env vars at startup; if both files exist, creates an HTTPS server on the configured `PORT`. Falls back to plain HTTP if either is missing. Port defaults to 3001.
 - [x] Hostname-aware external links — Swagger/Health URLs use `window.location.hostname`
 - [x] DB consolidation — Express and pentester share the same Postgres instance
 - [x] Status PATCH fix — `$3::text` cast; status pills persist correctly
@@ -196,7 +219,7 @@ JWT: HS256, secret from `JWT_SECRET` env (dev fallback warns), 24h expiry, paylo
 - [ ] **Token storage**: JWT in `localStorage` (XSS exposure). Move to httpOnly cookie before deploying outside trusted network.
 - [ ] **Rate limiting on `/api/auth/login`** — unlimited; add brute-force protection (`express-rate-limit`).
 - [ ] **Environment config** — DB password still hardcoded in `server.js`. Wire `.env` + `dotenv`.
-- [ ] **Legacy endpoints** — `POST /api/scans/run` + `GET /api/scans/:id/stream` still defined in `server.js`; no longer used by the UI. Safe to delete.
+- [ ] **Legacy endpoints** — `POST /api/scans/run` (spawns a Python subprocess + SSE stream) + `GET /api/scans/:id/stream` still defined in `server.js`; no longer used by the UI (superseded by the `/pentester/*` proxy to FastAPI). Safe to delete.
 - [ ] **`adaptScanForDetail()` in `Requests.jsx`** — confirm shape against real completed scan bodies and tighten.
 - [x] **`/network/scan` real LAN access** — K3s deployment uses `hostNetwork: true` on the API pod; nmap ARP probes and tshark see the real LAN. Docker Compose local dev still uses bridge (scan the Docker subnet or use `--network host` manually).
 - [ ] **Metasploit not wired** — form collects exploit + lhost but `msfrpcd` isn't running anywhere.
@@ -242,7 +265,7 @@ Recommended approach for Pi deployment: add Metasploit as a sidecar container in
 
 ### 🌐 Network awareness
 - [ ] **Asset inventory** — persist every sweep, track first-seen/last-seen per host
-- [x] **DHCP / mDNS enrichment** — passive tshark listener in My Network tab captures mDNS + DHCP hostnames; reverse-DNS fallback via router DNS
+- [x] **DHCP / mDNS enrichment** — passive tshark listener in Network Scan tab captures mDNS + DHCP hostnames; reverse-DNS fallback via router DNS
 - [ ] **Per-host history page** — every scan that touched IP X, vuln churn over time
 
 ### 📋 Triage workflow

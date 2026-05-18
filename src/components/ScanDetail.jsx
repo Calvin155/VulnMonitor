@@ -58,16 +58,30 @@ function CveDetail({ cveId, cveCache, onFetch }) {
   )
 }
 
+function reconBadge(text) {
+  if (!text) return null
+  if (/CONFIRMED:\s*YES/i.test(text))     return { label: 'CONFIRMED',     cls: 'confirmed' }
+  if (/CONFIRMED:\s*PARTIAL/i.test(text)) return { label: 'PARTIAL',       cls: 'partial'   }
+  if (/NOT CONFIRMED/i.test(text))        return { label: 'NOT CONFIRMED', cls: 'denied'    }
+  return null
+}
+
 function ReconCheck({ name, output }) {
   const [open, setOpen] = useState(false)
   const text = typeof output === 'string' ? output : JSON.stringify(output, null, 2)
   if (!text || text === '{}' || text === 'null' || !text.trim()) return null
+  const badge = reconBadge(text)
   return (
-    <div className="recon-check">
-      <button className="recon-check-header" onClick={() => setOpen(o => !o)}>
+    <div className="recon-check" onClick={() => setOpen(o => !o)}>
+      <div className="recon-check-header">
         <span className="recon-check-name">{name.replace(/_/g, ' ')}</span>
-        <span className="vuln-chevron">{open ? '▲' : '▼'}</span>
-      </button>
+        <div className="recon-check-meta">
+          {badge && (
+            <span className={`validation-badge validation-badge-${badge.cls}`}>{badge.label}</span>
+          )}
+          <span className="vuln-chevron">{open ? '▲' : '▼'}</span>
+        </div>
+      </div>
       {open && <pre className="recon-check-body">{text}</pre>}
     </div>
   )
@@ -146,13 +160,25 @@ function ProbeResult({ probe }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ScanDetail({ scan, onClose, onDelete, variant = 'panel' }) {
+export default function ScanDetail({ scan: initialScan, onClose, onDelete, variant = 'panel' }) {
   const { apiFetch, isAdmin } = useAuth()
+  const [scan, setScan]             = useState(initialScan)
   const [tab, setTab]               = useState('findings')
   const [expanded, setExpanded]     = useState(new Set())
   const [search, setSearch]         = useState('')
   const [sevFilter, setSevFilter]   = useState(null)
   const [cveCache, setCveCache]     = useState({})
+
+  useEffect(() => {
+    if (scan.status !== 'running') return
+    const id = setInterval(async () => {
+      try {
+        const res = await apiFetch(`/api/scans/${scan.id}`)
+        if (res.ok) setScan(await res.json())
+      } catch {}
+    }, 5000)
+    return () => clearInterval(id)
+  }, [scan.status, scan.id])
 
   const networkData = useMemo(() => parsePyDict(scan.network_scan), [scan.network_scan])
 
@@ -208,11 +234,12 @@ export default function ScanDetail({ scan, onClose, onDelete, variant = 'panel' 
         return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
       })
   )
-  const prevVulnLen = useRef(scan.vulnerabilities?.length ?? 0)
-  const vulnLen = scan.vulnerabilities?.length ?? 0
+  // Fingerprint covers count + confirmed status + validation presence so the list
+  // re-syncs when validation data arrives (same count, new fields).
+  const vulnFingerprint = (scan.vulnerabilities ?? [])
+    .map(v => `${v.confirmed ?? ''}:${v.validation_command ? 1 : 0}`)
+    .join(',')
   useEffect(() => {
-    if (vulnLen <= prevVulnLen.current) return
-    prevVulnLen.current = vulnLen
     setVulns(prev => {
       const statusMap = new Map(prev.map(v => [v._origIdx, v.status]))
       return [...(scan.vulnerabilities ?? [])]
@@ -223,7 +250,7 @@ export default function ScanDetail({ scan, onClose, onDelete, variant = 'panel' 
           return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
         })
     })
-  }, [vulnLen])
+  }, [vulnFingerprint])
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
@@ -360,6 +387,13 @@ export default function ScanDetail({ scan, onClose, onDelete, variant = 'panel' 
       {/* ── Findings ── */}
       {tab === 'findings' && (
         <>
+          {scan.status === 'running' && (
+            <div className="scan-running-banner">
+              <span className="scan-running-pulse" />
+              Scan in progress — findings appear as they are confirmed
+              {vulns.length > 0 && <span className="scan-running-count">{vulns.length} so far</span>}
+            </div>
+          )}
           <div className="detail-toolbar">
             <input
               className="detail-search"
@@ -436,6 +470,20 @@ export default function ScanDetail({ scan, onClose, onDelete, variant = 'panel' 
                           <p className="vuln-section-text">{hint(v)}</p>
                         </div>
                       )}
+                      {v.validation_command && (
+                        <div className="vuln-section vuln-section-validation">
+                          <div className="vuln-section-label">
+                            Validation probe
+                            <span className={`validation-badge validation-badge-${v.confirmed === 'YES' ? 'confirmed' : v.confirmed === 'NO' ? 'denied' : 'unknown'}`}>
+                              {v.confirmed === 'YES' ? 'CONFIRMED' : v.confirmed === 'NO' ? 'NOT CONFIRMED' : v.confirmed}
+                            </span>
+                          </div>
+                          <pre className="vuln-validation-cmd">{v.validation_command}</pre>
+                          {v.validation_output && (
+                            <pre className="vuln-validation-out">{v.validation_output}</pre>
+                          )}
+                        </div>
+                      )}
                       {v.cve && <CveDetail cveId={v.cve} cveCache={cveCache} onFetch={fetchCve} />}
                       <div className="vuln-section vuln-status-section">
                         <div className="vuln-section-label">Status</div>
@@ -464,14 +512,19 @@ export default function ScanDetail({ scan, onClose, onDelete, variant = 'panel' 
       {tab === 'recon' && (
         <div className="detail-recon">
           {scan.recon && (
-            <div className="recon-summary">
-              <div className="recon-summary-label">AI Recon Summary</div>
-              <p className="recon-summary-text">{scan.recon}</p>
+            <div className="recon-summary-card">
+              <div className="recon-card-header">
+                <span className="recon-card-title">AI Recon Summary</span>
+                <span className="recon-card-domain">{scan.domain}</span>
+              </div>
+              <div className="recon-card-body">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{scan.recon}</ReactMarkdown>
+              </div>
             </div>
           )}
           {scan.raw_recon && typeof scan.raw_recon === 'object' && Object.keys(scan.raw_recon).length > 0 && (
             <div className="recon-raw-section">
-              <div className="recon-summary-label">Raw Check Output</div>
+              <div className="recon-group-label">Recon Checks</div>
               {Object.entries(scan.raw_recon).map(([name, output]) => (
                 <ReconCheck key={name} name={name} output={output} />
               ))}
@@ -479,7 +532,7 @@ export default function ScanDetail({ scan, onClose, onDelete, variant = 'panel' 
           )}
           {scan.raw_scan && typeof scan.raw_scan === 'object' && Object.keys(scan.raw_scan).length > 0 && (
             <div className="recon-raw-section">
-              <div className="recon-summary-label">Scan Checks</div>
+              <div className="recon-group-label">Network Scan</div>
               {Object.entries(scan.raw_scan).map(([name, output]) => (
                 <ReconCheck key={name} name={name} output={output} />
               ))}
@@ -487,7 +540,7 @@ export default function ScanDetail({ scan, onClose, onDelete, variant = 'panel' 
           )}
           {scan.raw_webapp && typeof scan.raw_webapp === 'object' && Object.keys(scan.raw_webapp).length > 0 && (
             <div className="recon-raw-section">
-              <div className="recon-summary-label">Web App Checks</div>
+              <div className="recon-group-label">Web App Checks</div>
               {Object.entries(scan.raw_webapp).map(([name, output]) => (
                 <ReconCheck key={name} name={name} output={output} />
               ))}

@@ -332,6 +332,32 @@
   margin-left: 6px;
 }
 
+/* ── Live scan indicators ── */
+.activity-row-running {
+  border-left: 2px solid #38bdf8;
+}
+
+.activity-live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  margin-right: 6px;
+  flex-shrink: 0;
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
+
+.activity-scanning {
+  color: #38bdf8;
+  font-style: italic;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
 /* ── Findings Card ── */
 .findings-card {
   display: flex;

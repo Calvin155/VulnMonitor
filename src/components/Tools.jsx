@@ -147,6 +147,43 @@ function renderResult(id, data) {
     )
   }
 
+  // WHOIS
+  if (id === 'whois') {
+    const rows = [
+      ['Registrar',    data.registrar],
+      ['Organisation', data.org],
+      ['Country',      data.country],
+      ['Created',      Array.isArray(data.creation_date)  ? data.creation_date[0]  : data.creation_date],
+      ['Expires',      Array.isArray(data.expiration_date) ? data.expiration_date[0] : data.expiration_date],
+      ['Updated',      Array.isArray(data.updated_date)   ? data.updated_date[0]   : data.updated_date],
+      ['DNSSEC',       data.dnssec],
+    ].filter(([, v]) => v)
+    const ns = Array.isArray(data.name_servers) ? data.name_servers : []
+    const status = Array.isArray(data.status) ? [...new Set(data.status.map(s => s.split(' ')[0]))] : []
+    return (
+      <div className="tool-whois">
+        {rows.map(([label, val]) => (
+          <div key={label} className="whois-row">
+            <span className="whois-label">{label}</span>
+            <span className="whois-val">{String(val)}</span>
+          </div>
+        ))}
+        {ns.length > 0 && (
+          <div className="whois-row">
+            <span className="whois-label">Nameservers</span>
+            <div className="whois-ns">{ns.map((n, i) => <span key={i} className="whois-ns-item">{n}</span>)}</div>
+          </div>
+        )}
+        {status.length > 0 && (
+          <div className="whois-row">
+            <span className="whois-label">Status</span>
+            <div className="whois-ns">{status.map((s, i) => <span key={i} className="whois-ns-item">{s}</span>)}</div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // Generic fallback
   return <pre className="tool-raw">{JSON.stringify(data, null, 2)}</pre>
 }

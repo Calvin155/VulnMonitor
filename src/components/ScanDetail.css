@@ -514,57 +514,122 @@
   padding: 2px 0 8px;
 }
 
-.recon-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  background: rgba(255,255,255,0.02);
+/* ── Recon summary card — matches vuln-item style ── */
+.recon-summary-card {
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--accent);
   border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 4px;
 }
 
-.recon-summary-label {
-  font-size: 10px;
+.recon-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 10px;
+}
+
+.recon-card-title {
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--accent);
 }
 
-.recon-summary-text {
-  margin: 0;
+.recon-card-domain {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.recon-card-body {
+  padding: 14px 16px;
   font-size: 12.5px;
   color: var(--text-secondary);
   line-height: 1.7;
-  white-space: pre-wrap;
+}
+
+/* Markdown content inside recon card */
+.recon-card-body h3 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin: 14px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.recon-card-body h3::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.6;
+}
+.recon-card-body h3:first-child { margin-top: 0; }
+.recon-card-body ul { margin: 4px 0 8px 0; padding-left: 18px; }
+.recon-card-body li { margin-bottom: 4px; font-size: 12.5px; line-height: 1.6; }
+.recon-card-body ol { margin: 4px 0 8px 0; padding-left: 18px; }
+.recon-card-body p  { margin: 0 0 8px; }
+.recon-card-body strong { color: var(--text-primary); }
+.recon-card-body code {
+  background: rgba(0,0,0,0.3);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: #7dd3fc;
+}
+
+/* ── Raw check group label ── */
+.recon-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 4px 2px;
+  margin-top: 8px;
 }
 
 .recon-raw-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
+/* ── Individual check card — matches vuln-item style ── */
 .recon-check {
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s;
 }
+.recon-check:hover { border-color: var(--accent); }
 
 .recon-check-header {
-  all: unset;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
-  box-sizing: border-box;
   padding: 9px 12px;
-  background: var(--bg-base);
-  cursor: pointer;
-  transition: background 0.15s;
 }
-.recon-check-header:hover { background: var(--bg-card); }
+
+.recon-check-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
 .recon-check-name {
   font-size: 12px;
@@ -1178,4 +1243,77 @@
   .detail-report {
     font-size: 11.5px;
   }
+}
+/* ── Validation probe section ──────────────────────────────────────────────── */
+.vuln-section-validation { gap: 6px; }
+
+.validation-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+.validation-badge-confirmed { background: rgba(34,197,94,0.15); color: #22c55e; }
+.validation-badge-denied    { background: rgba(100,116,139,0.15); color: #94a3b8; }
+.validation-badge-unknown   { background: rgba(234,179,8,0.15); color: #eab308; }
+
+.vuln-validation-cmd {
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 5px;
+  font-size: 11px;
+  color: #7dd3fc;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border-left: 2px solid #38bdf8;
+}
+
+.vuln-validation-out {
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 5px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+/* ── Live scanning banner ─────────────────────────────────────────────────── */
+.scan-running-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #7dd3fc;
+}
+
+.scan-running-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  flex-shrink: 0;
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
+
+.scan-running-count {
+  margin-left: auto;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
 }

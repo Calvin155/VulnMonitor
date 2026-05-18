@@ -138,9 +138,35 @@ function compareBy(a, b, key) {
 
 export default function Dashboard() {
   const { apiFetch, user } = useAuth()
-  const { data: stats, loading: statsLoading }   = useApi('/api/stats', apiFetch)
-  const { data: scans, loading: scansLoading }   = useApi('/api/scans', apiFetch)
-  const { data: vulns, loading: vulnsLoading }   = useApi('/api/vulnerabilities', apiFetch)
+  const { data: stats, loading: statsLoading } = useApi('/api/stats', apiFetch)
+  const { data: vulns, loading: vulnsLoading } = useApi('/api/vulnerabilities', apiFetch)
+
+  const [scans, setScans]           = useState(null)
+  const [scansLoading, setScansLoading] = useState(true)
+
+  // Initial load
+  useEffect(() => {
+    let cancelled = false
+    apiFetch('/api/scans')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(d => { if (!cancelled) { setScans(d); setScansLoading(false) } })
+      .catch(() => { if (!cancelled) setScansLoading(false) })
+    return () => { cancelled = true }
+  }, [apiFetch])
+
+  // Poll every 5s while any scan is running
+  const hasRunning = Array.isArray(scans) && scans.some(s => s.status === 'running')
+  useEffect(() => {
+    if (!hasRunning) return
+    let cancelled = false
+    const id = setInterval(() => {
+      apiFetch('/api/scans')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(d => { if (!cancelled) setScans(d) })
+        .catch(() => {})
+    }, 5000)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [hasRunning, apiFetch])
 
   const loading = statsLoading || scansLoading || vulnsLoading
 
@@ -332,18 +358,25 @@ export default function Dashboard() {
               }, null)
               const type = topSev ?? (count > 0 ? 'info' : 'scan')
 
+              const isRunning = scan.status === 'running'
               return (
                 <button
                   key={scan.id}
-                  className={`activity-row activity-row-clickable activity-${type}`}
+                  className={`activity-row activity-row-clickable activity-${type}${isRunning ? ' activity-row-running' : ''}`}
                   onClick={() => openScan(scan.id)}
                   title="Open scan detail"
                 >
                   <div className="activity-line" />
                   <div className="activity-content">
-                    <div className="activity-event">{scan.domain}</div>
+                    <div className="activity-event">
+                      {isRunning && <span className="activity-live-dot" />}
+                      {scan.domain}
+                    </div>
                     <div className="activity-detail">
-                      {count > 0 ? `${count} finding${count !== 1 ? 's' : ''}` : 'No findings'}
+                      {isRunning
+                        ? <span className="activity-scanning">{count > 0 ? `${count} found so far…` : 'Scanning…'}</span>
+                        : count > 0 ? `${count} finding${count !== 1 ? 's' : ''}` : 'No findings'
+                      }
                       {topSev && <span className={`badge badge-${topSev} activity-sev-badge`}>{topSev}</span>}
                     </div>
                   </div>
