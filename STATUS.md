@@ -1,15 +1,17 @@
 # VulnReview — Project Status
 
-Last updated: 2026-05-07
+Last updated: 2026-05-09
 
 ## What This Is
 
 AI-assisted pentest monitoring dashboard. Four nav areas:
 - **Dashboard** (default landing) — welcome header, live API health, stat cards, severity donut, findings table, recent scans. All live from DB.
-- **Security dropdown** — Requests (submit & track scans) + My Network (ping-sweep)
+- **Security dropdown** — Requests (submit & track scans) + My Network (active ping-sweep + passive tshark listener)
 - **Settings dropdown** (admin only) — Manage Users + Swagger Docs link
 
 The whole SPA is gated behind a JWT login layer with role-based access (admin / user).
+
+Deployed as a Docker container in the unified PentestProject stack alongside AIPentester and PostgreSQL. On Raspberry Pi, K3s + Traefik serves it at `http://vulnmonitor.local` and `http://<pi-ip>`.
 
 ---
 
@@ -129,6 +131,7 @@ JWT: HS256, secret from `JWT_SECRET` env (dev fallback warns), 24h expiry, paylo
 | GET | `/pentester/scans/{id}/status` | Requests tab — polled every 2s during a run |
 | GET | `/pentester/scans/{id}` | Requests tab — drill-down |
 | GET | `/pentester/network/scan?cidr=...` | My Network tab — `nmap -sn` ping-sweep |
+| GET | `/pentester/network/passive?duration=&interface=` | My Network tab — passive mDNS + DHCP sniff via tshark |
 | GET | `/pentester/health` | Dashboard — live health card (polled every 30s) |
 
 ---
@@ -171,7 +174,8 @@ JWT: HS256, secret from `JWT_SECRET` env (dev fallback warns), 24h expiry, paylo
 - [x] Dashboard interactivity — clickable severity filters, sortable columns, search, expandable rows, scan drill-down modal
 - [x] Reusable `ScanDetail` component with search, severity filtering, expand/collapse-all
 - [x] Requests tab — POST `/pentester/scans`, polls status every 2s, cancel button, history list
-- [x] My Network tab — ping-sweep, sortable host table, copy-IP, Scan → hand-off to Requests
+- [x] My Network tab — active nmap ping-sweep, sortable host table, copy-IP, Scan → hand-off to Requests
+- [x] My Network passive tab — tshark mDNS + DHCP listener; duration + interface controls; live countdown + progress bar; hostname/MAC results table; Scan → hand-off
 - [x] JWT login layer — bcryptjs (cost 12), 24h tokens, Bearer middleware on all `/api/*` routes
 - [x] Role-based access — `admin` / `user` roles in DB + JWT, `adminOnly` middleware, `isAdmin` in frontend
 - [x] First-run setup flow — Login flips to register mode when users table is empty
@@ -194,7 +198,7 @@ JWT: HS256, secret from `JWT_SECRET` env (dev fallback warns), 24h expiry, paylo
 - [ ] **Environment config** — DB password still hardcoded in `server.js`. Wire `.env` + `dotenv`.
 - [ ] **Legacy endpoints** — `POST /api/scans/run` + `GET /api/scans/:id/stream` still defined in `server.js`; no longer used by the UI. Safe to delete.
 - [ ] **`adaptScanForDetail()` in `Requests.jsx`** — confirm shape against real completed scan bodies and tighten.
-- [ ] **`/network/scan` only sees Docker bridge** — run pentester with `--network host` to scan real LAN.
+- [x] **`/network/scan` real LAN access** — K3s deployment uses `hostNetwork: true` on the API pod; nmap ARP probes and tshark see the real LAN. Docker Compose local dev still uses bridge (scan the Docker subnet or use `--network host` manually).
 - [ ] **Metasploit not wired** — form collects exploit + lhost but `msfrpcd` isn't running anywhere.
 - [ ] **Mixed content on Pi** — Settings API links and Swagger open HTTP `:8000` from an HTTPS page. Works fine from the Pi directly; a reverse proxy (nginx) in front of `:8000` with the same TLS cert would fix it for remote browsers.
 
@@ -238,7 +242,7 @@ Recommended approach for Pi deployment: add Metasploit as a sidecar container in
 
 ### 🌐 Network awareness
 - [ ] **Asset inventory** — persist every sweep, track first-seen/last-seen per host
-- [ ] **DHCP / mDNS enrichment** — parse Pi-hole/dnsmasq leases for friendly names
+- [x] **DHCP / mDNS enrichment** — passive tshark listener in My Network tab captures mDNS + DHCP hostnames; reverse-DNS fallback via router DNS
 - [ ] **Per-host history page** — every scan that touched IP X, vuln churn over time
 
 ### 📋 Triage workflow

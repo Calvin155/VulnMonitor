@@ -1,16 +1,61 @@
-# React + Vite
+# VulnMonitor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+AI-assisted pentest monitoring dashboard. React + Vite frontend backed by an Express API, both running inside a single Node container. Connects to the AIPentester FastAPI engine and a shared PostgreSQL instance.
 
-Currently, two official plugins are available:
+> Full documentation — stack, endpoints, schema, feature status, roadmap — is in [STATUS.md](STATUS.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Quick start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Docker (recommended — runs with the full stack)
 
-## Expanding the ESLint configuration
+```bash
+# From the repo root:
+cp .env.example .env          # set POSTGRES_PASSWORD, JWT_SECRET, OPENROUTER_API_KEY
+docker compose up -d --build
+# Dashboard: http://localhost:3001
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Local dev
+
+```bash
+npm install
+npm start    # concurrently runs Express (:3001) + Vite (:5173)
+```
+
+First run: the login page flips to "Create the first user" automatically when the users table is empty.
+
+### Raspberry Pi / K3s
+
+See [../k3s-manifest.yml](../k3s-manifest.yml) and [../deploy-to-pi.sh](../deploy-to-pi.sh).
+
+Access via:
+- `http://vulnmonitor.local` (after adding DNS/hosts entry)
+- `http://<pi-ip>` (direct IP — catch-all Traefik rule)
+
+---
+
+## Stack
+
+| Layer | Tech |
+|-------|------|
+| Frontend | React 19 + Vite |
+| Backend | Express 5 + node-postgres + bcryptjs + JWT |
+| Database | PostgreSQL 16 (shared with AIPentester) |
+| Pentest engine | AIPentester FastAPI (proxied at `/pentester/*`) |
+
+---
+
+## Navigation
+
+```
+[ Dashboard ]  [ Security ▾ ]  [ Settings ▾ (admin only) ]
+                  Requests         Manage Users
+                  My Network       Swagger Docs
+```
+
+- **Dashboard** — stat cards, severity donut, findings table, recent scans, live API health
+- **Requests** — submit scans, poll live status, history
+- **My Network** — active nmap ping-sweep + passive tshark listener (mDNS/DHCP)
+- **Settings** — user management (admin only), API links
